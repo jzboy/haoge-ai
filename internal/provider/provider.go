@@ -858,11 +858,14 @@ func withPicks(a, pk Provider) Provider {
 	return a
 }
 
-// Hidden lists the signed-in accounts the user removed from magpie.
+// Hidden lists the signed-in accounts the user removed from magpie. The
+// file is read once, as parsed until it changes: a parse of it for each
+// account was 68 MB of the Providers page's 1.4 GB in twenty loads.
 func Hidden() []Provider {
 	var out []Provider
+	saved := storedFile().Providers
 	for _, a := range Accounts() {
-		for _, p := range load().Providers {
+		for _, p := range saved {
 			if p.ID == a.ID && p.Hidden {
 				a.Quiet, a.Tucked = p.Quiet, p.Tucked
 				out = append(out, a)
