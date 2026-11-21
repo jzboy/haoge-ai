@@ -14,7 +14,7 @@ magpie.plugin("library", (ctx) => {
 
   let lib = null;        // the page, as /api/library gives it
   let taken = 0;         // how many times lib was set, for a read to tell a newer answer came first
-  let tab = "instructions";
+  let tab = "plugins";
   let shown = "";        // the tab the page last drew, which fades in only when it changes
   let fits = [];         // textareas to fit before the page is painted
   try { tab = localStorage.getItem("magpie.libTab") || tab; } catch {}
@@ -959,19 +959,13 @@ magpie.plugin("library", (ctx) => {
   function libHead(counts) {
     const head = el("div", "lib-head");
     const n = (k) => (counts?.[k] ? " · " + counts[k] : "");
-    const tabs = segs(agentless() ? [["mcp", t("MCP servers") + n("mcp")]] : [
-      ["instructions", t("Instructions")],
-      ["memory", t("Memory")],
-      ["mcp", t("MCP servers") + n("mcp")],
-      ["skills", t("Skills") + n("skills")],
-      ["hooks", t("Hooks") + n("hooks")],
-      ["env", t("Environment variables") + n("env")],
-      ["subagents", t("Subagents") + n("subagents")],
-      ["commands", t("Slash commands") + n("commands")],
+    // 浩哥AI's Library keeps three tabs: Claude Code's own plugins, RTK and
+    // billion-context. The instructions, MCP, skills, hooks, env, subagents
+    // and commands tabs are not offered.
+    const tabs = segs([
       ["plugins", t("Claude plugins") + n("plugins")],
       ["rtk", "RTK"],
       ["bili", "billion-context"],
-      ...(hasPi() ? [["pi", t("Pi packages")]] : []),
     ], tab, openTab);
     tabs.classList.add("lib-tabs");
     head.append(tabs);
@@ -1009,11 +1003,9 @@ magpie.plugin("library", (ctx) => {
     const had = new Set([...page.querySelectorAll(".lib-detail[data-detail]")].map((d) => d.dataset.detail));
     page.replaceChildren();
     fits = [];
-    // the MCP servers alone with no agent to write to; the tab the reader
-    // last picked is kept for when there is one
-    if (agentless()) tab = "mcp";
-    // Pi's tab only while a Pi is here; the pick is kept for when one is
-    else if (tab === "pi" && !hasPi()) tab = "instructions";
+    // 浩哥AI offers three tabs; one remembered from a build that had the
+    // others opens the first of them
+    if (!["plugins", "rtk", "bili"].includes(tab)) tab = "plugins";
     const head = libHead({ mcp: lib.servers.length, skills: lib.skills.length, hooks: (lib.hooks || []).length, env: (lib.env || []).length, subagents: (lib.subagents || []).length, commands: (lib.commands || []).length, plugins: (lib.plugins || []).length });
     page.append(head);
     head.classList.toggle("stuck", top > 0);

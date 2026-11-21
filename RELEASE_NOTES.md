@@ -7,6 +7,11 @@
 - **两种产物**：Windows `haoge-ai-Windows-amd64.exe`（WebView2，无需额外依赖）、macOS `haoge-ai-macos-arm64.dmg`（Apple 芯片，未签名，首次打开请右键 → 打开）。
 <!-- /intro -->
 
+## haoge-v1.8
+
+- 导航精简：移除「路由」「网关」「用量」三个页面入口，以及托盘面板里的「用量（统计）」和「路由」标签。网关、用量记录和路由策略仍在后台照常工作。
+- 恢复「资源库」：只提供 Claude 插件、RTK、billion-context 三项，其余分类不再显示。
+
 ## haoge-v1.7
 
 - 安装后的程序名与图标：Windows 安装到 `%LOCALAPPDATA%\Programs\haogeai\haogeai.exe`，开始菜单显示「浩哥AI」；macOS 包内可执行文件为 `haogeai`。以前的 magpie 安装（含开始菜单、卸载项、开机启动）会在首次运行时自动清理。
