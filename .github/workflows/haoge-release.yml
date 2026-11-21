@@ -98,12 +98,22 @@ jobs:
           # push created it, and v1.3's dmg was lost this way): create
           # refuses a Release that exists, so its assets are uploaded to it
           # instead, the dmg included.
+          # the notes: RELEASE_NOTES.md's fixed introduction (Chinese only)
+          # and this tag's own section; a tag without one says so plainly
+          notes=dist/release-notes.md
+          {
+            sed -n '/<!-- intro -->/,/<!-- \/intro -->/p' RELEASE_NOTES.md | sed '1d;$d'
+            echo
+            echo "## 本次更新"
+            body=$(awk -v t="## $TAG" '$0==t{f=1;next} f&&/^## /{exit} f' RELEASE_NOTES.md)
+            if [ -n "$body" ]; then echo "$body"; else echo "- 问题修复与体验改进。"; fi
+          } > "$notes"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "浩哥AI $TAG" --notes-file "$notes"
             gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "浩哥AI $TAG" \
-              --notes "浩哥AI — Windows amd64 (.exe)，macOS arm64 (.dmg) 由可用的 macOS 运行器构建时附带。基于 yetone/magpie 二次开发（MIT）。" \
+              --title "浩哥AI $TAG" --notes-file "$notes" \
               "${files[@]}"
           fi
 
