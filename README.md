@@ -37,20 +37,6 @@ Runs on macOS, Windows and Linux (menu bar app, window, TUI, web UI and CLI), in
 
 **3 · Pick a model** for each agent on the **Agents** page. Start a new session and it's on the new model.
 
-Or do it all from the terminal:
-
-```sh
-magpie provider add deepseek sk-…              # a preset needs only the key
-magpie claude deepseek/deepseek-v4-pro          # Claude Code on DeepSeek
-magpie codex moonshot/kimi-k2.5                 # Codex on Kimi
-magpie group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=smart
-magpie claude group/opus-anywhere               # fails over between subscriptions
-magpie save work && magpie use work             # profiles
-magpie quota                                    # what's left on every plan
-magpie settings set theme dark                  # every Settings switch, from the terminal
-magpie tool generate_image "a magpie, watercolour" -o hero.png   # magpie's image, vision and search tools, called directly
-magpie tui                                      # the whole thing, in a terminal
-```
 
 haoge-ai finds the subscriptions your agents are signed in to by reading their sign-ins (Claude Code's and Codex's files, the Keychain). To keep it from reading them, turn off Settings → Privacy → *Subscription accounts*, or run `magpie accounts discovery off` (`on` turns it back on). `MAGPIE_NO_ACCOUNTS=1` turns it off for one run without changing the saved setting. API-key providers work either way.
 
@@ -71,72 +57,6 @@ export OPENAI_BASE_URL=http://127.0.0.1:3425/v1     OPENAI_API_KEY=magpie
 export ANTHROPIC_BASE_URL=http://127.0.0.1:3425     ANTHROPIC_API_KEY=magpie
 export GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:3425 GEMINI_API_KEY=magpie
 ```
-
-## How it fits together
-
-The gateway at `127.0.0.1:3425` speaks OpenAI Chat, OpenAI Responses, Anthropic Messages and Gemini, and translates between them, streaming, tool calls and reasoning included.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/architecture-dark.svg">
-  <img src="site/public/img/architecture.svg" alt="How haoge-ai fits together: your agents send requests to the haoge-ai gateway at 127.0.0.1:3425, which routes them through routing groups and plugins to your API keys, subscriptions and local models.">
-</picture>
-
-
-## What it does
-
-### Any model, any agent
-
-Click a value and a searchable list opens: every model of every provider you added, as `provider/model`. The agent's config is rewritten atomically, and its comments, order and formatting stay as they were. **Profiles** save every agent's setup under one name ("Budget", "Focus") and switch them all back in one move. Each agent can also have its own short list of models; a profile keeps that list too.
-
-<table>
-<tr>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/panel-dark.png">
-  <img src="site/public/img/panel-light.png" alt="The menu bar panel">
-</picture>
-</td>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/picker-dark.png">
-  <img src="site/public/img/picker-light.png" alt="The model picker">
-</picture>
-</td>
-</tr>
-</table>
-
-### Privacy masking
-
-Agents put what they read into the prompt: an `.env`, a config file, a log with a token in it. With masking on, haoge-ai swaps those values for placeholders on your computer before a request leaves it, and swaps them back in the reply. Your agent and your files keep the real values; the vendor never sees them.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/masking-dark.png">
-  <img src="site/public/img/masking-light.png" width="900" alt="Insights › Masking: 5,812 values kept from vendors in 7 days, flowing from Claude Code and Codex through haoge-ai to OpenAI, Kimi and DeepSeek, and each request's masked values">
-</picture>
-
-| | |
-| :-- | :-- |
-| **Found two ways** | Rules for what is certain (API keys, private keys, tokens, emails, and card and ID numbers whose checksum adds up), and, if you want it, a model that runs on this computer for the names, addresses and passwords no rule can find (a 1.6 GB download, on the CPU) |
-| **Put back everywhere** | A value becomes a placeholder such as `{{API_KEY_k3v9x2mq}}`, and every placeholder in the reply turns back into its value: streamed text and tool-call arguments too, so a command the agent runs has the real key |
-| **Nothing breaks** | A value gets the same placeholder every time, so the conversation, the prompt cache and thinking signatures stay valid. A value masked once is masked wherever it shows up later |
-| **Never on disk** | Values are held in memory only. The record keeps each value's kind, length and first characters. If masking is on and can't run, the request is held back (503), never sent as written |
-| **You can check it** | **Insights › Masking** lists every request it changed, with what the vendor got instead, side by side, and **Try it** in Settings shows what a text would become |
-| **Your rules** | Secrets and personal data each on or off, finer kinds (passport, IBAN, MAC, public IP…), your own words and patterns, and whether a value found is masked, only warned about, or held back (**Mask**, **Warn**, **Block**) |
-
-The cost: the model sees `{{API_KEY_…}}`, not the key, so a task about the value itself (why is this token refused?) can't be done on it. Put such values under **Never mask**. Rules can be wrong now and then; the Masking page is where you'd see it. It's off until you turn it on in **Settings → Privacy**. Emails at names kept for examples (`example.com`, `.test`, `.invalid`) are left as written.
-
-### Providers
-
-Pick a preset, paste a key. Model lists come from the vendor, with names and reasoning levels filled in from [models.dev](https://models.dev), so a model released this morning is in your picker on the next refresh.
-
-> **Presets include** Anthropic · OpenAI · Google Gemini · Google Vertex AI · Amazon Bedrock (runtime and Mantle) · DeepSeek · Kimi · Zhipu GLM · MiniMax · StepFun · LongCat · Qwen · Baidu Qianfan · Tencent Cloud · Huawei Cloud MaaS · Volcengine Ark · Mistral · Voyage AI · Groq · Nous Portal · xAI · OpenRouter · Vercel AI Gateway · GMI Cloud · Together · Fireworks · Fireworks Nexus · SiliconFlow · NVIDIA NIM · ModelScope · Ollama · LM Studio … and any OpenAI- or Anthropic-compatible URL.
-
-**Import** brings in the providers from CC Switch, Claude Code, Codex and Alma. **[Add to haoge-ai](https://usemagpie.ai/docs/import)** links let a provider's website hand its config to haoge-ai in one click. Each key and each account can go through a proxy of its own.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/add-dark.png">
-  <img src="site/public/img/add-light.png" width="900" alt="Add provider: subscriptions to sign in to, vendors, relays and local servers">
-</picture>
 
 ### Subscriptions
 
@@ -168,62 +88,7 @@ A conversation **stays with the account that answered it** while the vendor's pr
   <img width="760" src="site/public/img/routing-light.png" alt="The Routing view: four agents through haoge-ai to seven providers, live">
 </picture>
 
-<table>
-<tr>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/intent-trace-dark.png">
-  <img src="site/public/img/intent-trace-light.png" alt="An intent-routed turn, explained step by step">
-</picture>
-</td>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/nested-routing-dark.png">
-  <img src="site/public/img/nested-routing-light.png" alt="A routing group inside a routing group">
-</picture>
-</td>
-</tr>
-</table>
 
-### Plugins
-
-```sh
-magpie plugin add opencode-gemini-auth   # an OpenCode plugin from npm
-magpie plugin login google-plugin        # its own sign-in flow, in magpie
-```
-
-Plugins run on [Bun](https://bun.sh), downloaded the first time one needs it. A plugin signs in, lists its models and makes each request; agents use those models like any other provider's. Browse **[magpie-community/plugins](https://github.com/magpie-community/plugins)**, or [write your own](https://usemagpie.ai/docs/plugins).
-
-A plugin can also be **gateway middleware**: JavaScript that sees what every agent sends and gets back. `onRequest` can rewrite a request or turn it away, `onEvent` sees each streamed event, `onResponse` the whole reply. A hook that throws or runs too long leaves the request as it was.
-
-```js
-// alias.middleware.js — magpie plugin add ./alias.middleware.js
-export function onRequest(body, ctx) {
-  if (body.model === "fast") return { ...body, model: "deepseek/deepseek-chat" };
-}
-```
-
-<details>
-<summary><b>Ready-made middleware</b>, most of it what <a href="https://github.com/QuantumNous/new-api">New API</a> does for its channels, with the same JSON</summary>
-
-<br>
-
-| Package | What it does |
-| :-- | :-- |
-| `param-override` | New API's `param_override`: set, delete, move or rewrite request fields, under conditions, or turn a request away |
-| `model-map` | New API's `model_mapping`: send a model under another name; replies keep the name asked for |
-| `system-prompt` | Your system prompt on every request, or some agents' or models' |
-| `word-guard` | New API's sensitive-word filter: turn away or mask words in what users send, and in replies |
-| `think-tags` | Take `<think>…</think>` out of replies, or put `reasoning_content` into them |
-
-```sh
-magpie plugin add @magpie-community/middleware-model-map
-magpie plugin options model-map '{"mapping": {"fast": "deepseek/deepseek-chat"}}'
-```
-
-Find them under Plugins › Discover › Gateway middleware. See [Gateway middleware](https://usemagpie.ai/docs/plugins#middleware).
-
-</details>
 
 ### Usage and cost
 
@@ -240,14 +105,6 @@ Find them under Plugins › Discover › Gateway middleware. See [Gateway middle
 | **Context** | How full each request's context window is, how much came from the cache, and what fills it |
 | **Bills** | By account and by upstream key, and OTLP export to your own observability stack |
 
-### Sharing
-
-| | |
-| :-- | :-- |
-| **Local network** | Turn on *Share on local network* and give each client a named gateway key with its own daily, weekly or monthly token and cost limit |
-| **[Remote haoge-ai](https://usemagpie.ai/docs/remote)** | A laptop uses the providers, accounts and groups of the haoge-ai on your desktop, and still wires its own agents |
-| **[Docker](https://usemagpie.ai/docs/docker)** | Run `ghcr.io/yetone/magpie` on a server or a NAS and manage it from the web UI |
-| **Sync** | Back up to a file, or sync machines over WebDAV (Nutstore, Nextcloud…), S3, or an encrypted GitHub repository backup |
 
 ### Also
 
@@ -258,17 +115,6 @@ Find them under Plugins › Discover › Gateway middleware. See [Gateway middle
 - **WSL**: on Windows, agents inside WSL distros are wired too, and their sessions counted.
 - **Keep awake**, light and dark, and your theme's look on [Omarchy](https://omarchy.org).
 
-## Documentation
-
-| | |
-| :-- | :-- |
-| **[Get started](https://usemagpie.ai/docs/start)** | The guided tour |
-| **[Reference](docs/reference.md)** | Every agent, provider option, gateway endpoint, CLI command and file |
-| **[Plugins](https://usemagpie.ai/docs/plugins)** | Use plugins and write your own |
-| **[Intent routing](https://usemagpie.ai/docs/intent)** | Route each turn by what it asks for |
-| **[Import links](https://usemagpie.ai/docs/import)** | "Add to haoge-ai" buttons for provider websites |
-| **[Remote haoge-ai](https://usemagpie.ai/docs/remote)** | Use one haoge-ai's providers and groups from your other computers |
-| **[Docker](https://usemagpie.ai/docs/docker)** | Run haoge-ai on a server or a NAS |
 
 ## Privacy
 
