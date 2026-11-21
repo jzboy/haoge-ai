@@ -49,8 +49,8 @@ jobs:
           make release-dmg
       - uses: actions/upload-artifact@v4
         with:
-          name: haoge-ai-darwin-arm64.dmg
-          path: dist/haoge-ai-darwin-arm64.dmg
+          name: haoge-ai-macos-arm64.dmg
+          path: dist/haoge-ai-macos-arm64.dmg
 
   exe:
     runs-on: ubuntu-latest
@@ -68,8 +68,8 @@ jobs:
         run: make release-windows
       - uses: actions/upload-artifact@v4
         with:
-          name: haogeai.exe
-          path: dist/haogeai.exe
+          name: haoge-ai-Windows-amd64.exe
+          path: dist/haoge-ai-Windows-amd64.exe
 
   # The Windows exe is published on its own: a repository whose account can't
   # use GitHub's macOS runners (the dmg job is cancelled with "macos-14-arm64-us-
@@ -92,8 +92,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          files=(dist/haogeai.exe)
-          [ -f dist/haoge-ai-darwin-arm64.dmg ] && files+=(dist/haoge-ai-darwin-arm64.dmg)
+          files=(dist/haoge-ai-Windows-amd64.exe)
+          [ -f dist/haoge-ai-macos-arm64.dmg ] && files+=(dist/haoge-ai-macos-arm64.dmg)
           # A tag can already have a Release (an earlier run of the same
           # push created it, and v1.3's dmg was lost this way): create
           # refuses a Release that exists, so its assets are uploaded to it
@@ -120,13 +120,13 @@ jobs:
           token: ${{ github.token }}
       - uses: actions/download-artifact@v4
         with:
-          name: haoge-ai-darwin-arm64.dmg
+          name: haoge-ai-macos-arm64.dmg
           path: release
       - name: Commit the dmg to haoge-ai
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add release/haoge-ai-darwin-arm64.dmg
+          git add release/haoge-ai-macos-arm64.dmg
           if git diff --cached --quiet; then
             echo "dmg unchanged"
           else

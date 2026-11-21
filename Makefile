@@ -110,9 +110,9 @@ release-dmg: app
 	@rm -rf dist/dmg-stage && mkdir -p dist/dmg-stage
 	@cp -R 浩哥AI.app dist/dmg-stage/
 	@ln -s /Applications dist/dmg-stage/Applications
-	@hdiutil create -volname "浩哥AI" -srcfolder dist/dmg-stage -ov -format $(DMG_FORMAT) dist/haoge-ai-darwin-arm64.dmg
+	@hdiutil create -volname "浩哥AI" -srcfolder dist/dmg-stage -ov -format $(DMG_FORMAT) dist/haoge-ai-macos-arm64.dmg
 	@rm -rf dist/dmg-stage
-	@echo "  dist/haoge-ai-darwin-arm64.dmg"
+	@echo "  dist/haoge-ai-macos-arm64.dmg"
 
 icons:
 	@mkdir -p dist/tools
@@ -166,7 +166,7 @@ release-windows: assets-pack conpty-pair
 		--file-version "$(or $(WINVER),0.0.0)" --product-version "$(or $(WINVER),0.0.0)"
 	@echo "  windows/amd64 (app)"
 	@CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -buildvcs=false -ldflags="-s -w" -o internal/update/launcher-amd64.com ./internal/update/launcher || exit 1
-	@CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags production,comlauncher,packedassets,conptypair -trimpath -ldflags="$(LDFLAGS) -H windowsgui" -o dist/haogeai.exe . || exit 1
+	@CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags production,comlauncher,packedassets,conptypair -trimpath -ldflags="$(LDFLAGS) -H windowsgui" -o dist/haoge-ai-Windows-amd64.exe . || exit 1
 	@rm -f rsrc_windows_*.syso internal/update/launcher-*.com
 
 # The desktop app for Linux links GTK 3 and WebKitGTK 4.1 through cgo, so it

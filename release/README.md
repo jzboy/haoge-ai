@@ -1,10 +1,10 @@
 # 浩哥AI 发布产物
 
-本目录只保留 dmg（CI 提交回来）。Windows 安装包名为 `haogeai.exe`，只走 Releases。
+本目录只保留 dmg（CI 提交回来）。Windows 安装包名为 `haoge-ai-Windows-amd64.exe`，只走 Releases。
 
 | 文件 | 平台 | 说明 |
 | --- | --- | --- |
-| `haoge-ai-darwin-arm64.dmg` | macOS arm64 | **由 CI 产出**（见下）；Windows 上无法构建 |
+| `haoge-ai-macos-arm64.dmg` | macOS arm64 | **由 CI 产出**（见下）；Windows 上无法构建 |
 
 ## macOS dmg
 
@@ -21,7 +21,7 @@ macOS GUI 版链接 cgo + WebKit，只能在 macOS（arm64）上构建，本机�
    git push jzboy haoge-v1.0
    ```
 
-   跑完后本目录会出现 `haoge-ai-darwin-arm64.dmg`（CI 机器人提交），这就是两份产物都在
+   跑完后本目录会出现 `haoge-ai-macos-arm64.dmg`（CI 机器人提交），这就是两份产物都在
    haoge-ai 分支上的状态。
 
 2. **在 Mac 上本地构建**：
@@ -29,7 +29,7 @@ macOS GUI 版链接 cgo + WebKit，只能在 macOS（arm64）上构建，本机�
    ```sh
    make icons
    make release-dmg
-   # 产物：dist/haoge-ai-darwin-arm64.dmg
+   # 产物：dist/haoge-ai-macos-arm64.dmg
    ```
 
    未签名/未公证，首次打开需右键 → 打开。
@@ -39,7 +39,7 @@ macOS GUI 版链接 cgo + WebKit，只能在 macOS（arm64）上构建，本机�
 本目录的 exe 由以下命令在 Windows 上构建（Git Bash，需 Go ≥ 1.26.8）：
 
 ```bash
-make release-windows   # 产物：dist/haogeai.exe
+make release-windows   # 产物：dist/haoge-ai-Windows-amd64.exe
 ```
 
 或不用 make（本机无 make 时）：
@@ -54,7 +54,7 @@ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -buildvcs=false -ldfl
 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build \
   -tags production,comlauncher,packedassets,conptypair -trimpath \
   -ldflags="-s -w -X main.version=haoge-1.0 -H windowsgui" \
-  -o dist/haogeai.exe .
+  -o dist/haoge-ai-Windows-amd64.exe .
 ```
 
 版本号 `haoge-1.0` 是非 semver，`update.Released()` 为 false：应用不会从上游自更新、也不发送遥测。

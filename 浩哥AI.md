@@ -67,8 +67,8 @@
 
 | 产物 | 平台 | 命令 |
 | --- | --- | --- |
-| `dist/haoge-ai-darwin-arm64.dmg` | macOS arm64 | `make icons && make release-dmg`（须在 arm64 Mac 上，GUI 需 cgo + WebKit） |
-| `dist/haogeai.exe` | Windows amd64 | `make release-windows`（WebView2 无需 cgo，任意平台可交叉编译） |
+| `dist/haoge-ai-macos-arm64.dmg` | macOS arm64 | `make icons && make release-dmg`（须在 arm64 Mac 上，GUI 需 cgo + WebKit） |
+| `dist/haoge-ai-Windows-amd64.exe` | Windows amd64 | `make release-windows`（WebView2 无需 cgo，任意平台可交叉编译） |
 
 `make release` 按当前主机产出对应一种。CI 见 [.github/workflows/haoge-release.yml](.github/workflows/haoge-release.yml)：
 推送 `haoge-v*` 标签或手动触发，macos-14（arm64）产 dmg、ubuntu-latest 交叉产 exe，并附到 GitHub Release。
