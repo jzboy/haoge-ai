@@ -109,3 +109,9 @@ macOS 应用未签名/公证，首次打开需右键 → 打开。
     其断言依赖 Claude 订阅的模型目录与共享技能目录的旧成员集合，随订阅裁剪而变；未再深挖。
 - **macOS dmg** 需在 Mac / macOS CI 上产出（GUI 需 cgo + WebKit + hdiutil），本 Windows 机无法构建；
   已提供 `make release-dmg` 与 `.github/workflows/haoge-release.yml`。
+## 仓库与发布
+
+- 开发仓库：[github.com/jzboy/haoge-ai](https://github.com/jzboy/haoge-ai)（分支 `haoge-ai`，公开）。历史已剔除 `release/` 下的安装包，安装包只放 Releases。
+- 版本号取自最新的 `haoge-vX.Y` 标签（`go run ./build/version`），应用内显示 `X.Y.0`；`+haoge` 标记让 `update.Released()` 为 false，不会从上游 feed 自更新。
+- 发布：`git tag haoge-vX.Y && git push origin haoge-vX.Y`，CI（GitHub Actions）构建 exe 与 dmg 并附到 Release；dmg 需要一台以 `self-hosted`、`macOS`、`ARM64` 标签登记的 Apple 芯片 Mac（M1 已验证）。
+- `make icons && make release-dmg` 可在 Mac 上手动出 dmg（图标并行、ULFO 压缩）；`DMG_FORMAT=UDZO` 回到旧压缩。
