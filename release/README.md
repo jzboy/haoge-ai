@@ -1,11 +1,9 @@
 # 浩哥AI 发布产物
 
-本目录存放浩哥AI 的两份构建产物（本分支 `haoge-ai`）。
+本目录只保留 dmg（CI 提交回来）。Windows 安装包名为 `haogeai.exe`，只走 Releases。
 
 | 文件 | 平台 | 说明 |
 | --- | --- | --- |
-| `haoge-ai-windows-amd64.exe` | Windows amd64 | GUI 版（WebView2），已在 Windows 11 上实跑验证 |
-| `haoge-ai-windows-amd64.exe.sha256` | — | 上述 exe 的 SHA-256 |
 | `haoge-ai-darwin-arm64.dmg` | macOS arm64 | **由 CI 产出**（见下）；Windows 上无法构建 |
 
 ## macOS dmg
@@ -41,7 +39,7 @@ macOS GUI 版链接 cgo + WebKit，只能在 macOS（arm64）上构建，本机�
 本目录的 exe 由以下命令在 Windows 上构建（Git Bash，需 Go ≥ 1.26.8）：
 
 ```bash
-make release-windows   # 产物：dist/haoge-ai-windows-amd64.exe
+make release-windows   # 产物：dist/haogeai.exe
 ```
 
 或不用 make（本机无 make 时）：
@@ -56,7 +54,7 @@ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -buildvcs=false -ldfl
 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build \
   -tags production,comlauncher,packedassets,conptypair -trimpath \
   -ldflags="-s -w -X main.version=haoge-1.0 -H windowsgui" \
-  -o dist/haoge-ai-windows-amd64.exe .
+  -o dist/haogeai.exe .
 ```
 
 版本号 `haoge-1.0` 是非 semver，`update.Released()` 为 false：应用不会从上游自更新、也不发送遥测。

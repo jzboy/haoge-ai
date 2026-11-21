@@ -68,8 +68,8 @@ jobs:
         run: make release-windows
       - uses: actions/upload-artifact@v4
         with:
-          name: haoge-ai-windows-amd64.exe
-          path: dist/haoge-ai-windows-amd64.exe
+          name: haogeai.exe
+          path: dist/haogeai.exe
 
   # The Windows exe is published on its own: a repository whose account can't
   # use GitHub's macOS runners (the dmg job is cancelled with "macos-14-arm64-us-
@@ -92,7 +92,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          files=(dist/haoge-ai-windows-amd64.exe)
+          files=(dist/haogeai.exe)
           [ -f dist/haoge-ai-darwin-arm64.dmg ] && files+=(dist/haoge-ai-darwin-arm64.dmg)
           # A tag can already have a Release (an earlier run of the same
           # push created it, and v1.3's dmg was lost this way): create
