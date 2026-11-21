@@ -9,6 +9,7 @@
 
 ## haoge-v1.7
 
+- 安装后的程序名与图标：Windows 安装到 `%LOCALAPPDATA%\Programs\haogeai\haogeai.exe`，开始菜单显示「浩哥AI」；macOS 包内可执行文件为 `haogeai`。以前的 magpie 安装（含开始菜单、卸载项、开机启动）会在首次运行时自动清理。
 - 发布说明改为固定中文介绍加本次更新内容。
 - 安装包更名为 `haoge-ai-Windows-amd64.exe` 与 `haoge-ai-macos-arm64.dmg`。
 - 界面视觉打磨：卡片统一圆角与柔和投影、弹层浮起、页面顶部淡光晕。
