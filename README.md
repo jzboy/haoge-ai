@@ -30,13 +30,6 @@ It's for you if you use more than one agent, more than one provider, or more tha
 
 Runs on macOS, Windows and Linux (menu bar app, window, TUI, web UI and CLI), in Docker, and on Termux.
 
-## Quick start
-
-**1 · Install.** Download the app from **[usemagpie.ai](https://usemagpie.ai)**, or run:
-
-```sh
-curl -fsSL https://usemagpie.ai/install.sh | sh
-```
 
 <sub>Mac builds are signed and notarised, every release file carries a GitHub Actions build attestation (`gh attestation verify <file> -R yetone/magpie-releases`), and every build updates itself. On Linux the script installs the desktop app, and on a desktop without WebKitGTK 4.1 installs it first with your package manager (sudo asks for your password); with no desktop, or no terminal to ask at, it installs the terminal build and says which package to add. `--gui` or `--tui` chooses. Behind a firewall, use `--proxy` or `--mirror`. Or `go install github.com/yetone/magpie@latest`, or the [Docker image](https://usemagpie.ai/docs/docker). Remove haoge-ai with `curl -fsSL https://usemagpie.ai/install.sh | sh -s -- --uninstall`: it puts your agents back as they were, then takes off what the script installed (with haoge-ai deleted already, it downloads one to put them back); your settings in `~/.config/magpie` stay unless you add `--purge`.</sub>
 
