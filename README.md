@@ -81,14 +81,6 @@ A **routing group** is several models an agent picks as one, such as `group/dail
 | **`usage`** | Use the least-used member first |
 | **`pace`** | Use the account with the most of its week left per hour until it resets |
 
-A conversation **stays with the account that answered it** while the vendor's prompt cache is worth keeping. Groups can contain groups. **[Intent routing](https://usemagpie.ai/docs/intent)** has a small model of your choice read each new turn, so tests go to the strong model and quick questions to the cheap one. The Routing view shows every decision live.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/routing-dark.png">
-  <img width="760" src="site/public/img/routing-light.png" alt="The Routing view: four agents through haoge-ai to seven providers, live">
-</picture>
-
-
 ### Also
 
 - **Library**: write instructions, MCP servers, skills and subagents once; haoge-ai writes them into each agent's files in its format, and removes only what it wrote.
