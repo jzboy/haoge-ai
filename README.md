@@ -6,7 +6,6 @@
 
 ### 浩哥AI — every agent's model. One place.
 
-** 浩哥AI.**<br>
 Five agents, four providers, one local gateway. Pick each agent's model in one place,<br>
 and when a quota runs out, it moves on to your next account by itself.
 
