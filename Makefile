@@ -87,13 +87,13 @@ test-ui:
 	node --test --test-concurrency=$(UI_TEST_CONCURRENCY) $(UI_TESTS)
 
 # macOS bundle: menu bar app with no Dock icon (LSUIElement). The bundle is
-# named 浩哥AI.app; its executable stays magpie (CFBundleExecutable), and the
-# Dock icon comes from magpie.icns (no Assets.car: the icon set is pure Go).
+# named 浩哥AI.app; its executable is haogeai (CFBundleExecutable), and the
+# Dock icon comes from haogeai.icns (no Assets.car: the icon set is pure Go).
 app: build-release
 	@rm -rf 浩哥AI.app
 	@mkdir -p 浩哥AI.app/Contents/MacOS 浩哥AI.app/Contents/Resources
-	@cp magpie 浩哥AI.app/Contents/MacOS/magpie
-	@cp build/darwin/magpie.icns 浩哥AI.app/Contents/Resources/magpie.icns
+	@cp magpie 浩哥AI.app/Contents/MacOS/haogeai
+	@cp build/darwin/haogeai.icns 浩哥AI.app/Contents/Resources/haogeai.icns
 	@cp THIRD_PARTY_NOTICES 浩哥AI.app/Contents/Resources/THIRD_PARTY_NOTICES
 	@sed 's/@VERSION@/$(VERSION)/' build/darwin/Info.plist > 浩哥AI.app/Contents/Info.plist
 	@echo "  浩哥AI.app"
@@ -129,7 +129,7 @@ icons:
 	 bg dist/tools/gen-icons win-ico internal/gui/icon-windows.ico; \
 	 bg dist/tools/gen-icons app 1024 internal/gui/icon-1024.png; \
 	 bg dist/tools/gen-icons app 256 internal/gui/icon-256.png; \
-	 bg dist/tools/gen-icons icns build/darwin/magpie.icns; \
+	 bg dist/tools/gen-icons icns build/darwin/haogeai.icns; \
 	 for p in $$pids; do wait $$p || exit 1; done
 
 # 浩哥AI's two artifacts: the macOS arm64 .dmg (built on a Mac) and the

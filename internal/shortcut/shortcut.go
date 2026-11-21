@@ -21,7 +21,11 @@ import (
 )
 
 // Name is what the shortcut is called, and what Windows search finds.
-const Name = "Magpie"
+const Name = "浩哥AI"
+
+// legacyName is what the shortcut was called while the app was magpie:
+// one it made then is taken out (removeLegacy).
+const legacyName = "Magpie"
 
 // StateName is the file in magpie's folder recording that the shortcut was
 // made, and for which exe.
@@ -58,6 +62,7 @@ func Ensure() {
 	if err := ensure(Target(exe), appdir.Portable(), filepath.Join(appdir.Config(), StateName)); err != nil {
 		log.Println("start menu shortcut:", err)
 	}
+	removeLegacy()
 }
 
 // errNoStartMenu is startMenu's answer where there is none (off Windows).
@@ -82,8 +87,10 @@ func ensure(exe, portable, state string) error {
 	}
 	_, gone := os.Stat(lnk)
 	if gone != nil {
-		if _, err := os.Stat(state); err == nil {
-			// made once already: the user deleted it, and it stays deleted
+		if b, err := os.ReadFile(state); err == nil && sameExe(string(b), exe) {
+			// made once already for this exe: the user deleted it, and it
+			// stays deleted. Another exe's (the one installed while the app
+			// was magpie, or another copy's) is made anew.
 			return nil
 		}
 		if before {
@@ -96,6 +103,12 @@ func ensure(exe, portable, state string) error {
 		return err
 	}
 	return remember(state, exe)
+}
+
+// sameExe says whether recorded (a state file's line) names exe, Windows'
+// way: in any case.
+func sameExe(recorded, exe string) bool {
+	return strings.EqualFold(filepath.Clean(strings.TrimSpace(recorded)), filepath.Clean(exe))
 }
 
 // remember records in state that the shortcut was made, for exe.

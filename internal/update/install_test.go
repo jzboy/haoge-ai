@@ -27,7 +27,7 @@ func newInstallFixture(t *testing.T) *installFixture {
 	root := t.TempDir()
 	f := &installFixture{
 		downloads: filepath.Join(root, "Downloads"),
-		to:        filepath.Join(root, "Local", "Programs", "magpie", "magpie.exe"),
+		to:        filepath.Join(root, "Local", "Programs", "haogeai", "haogeai.exe"),
 		profiles:  filepath.Join(root, "Roaming"),
 		versions:  map[string]uint64{},
 	}
@@ -38,7 +38,7 @@ func newInstallFixture(t *testing.T) *installFixture {
 	if err := os.WriteFile(f.exe, []byte("MZ new download"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	saved := []any{installTarget, downloadFolder, fileVersion, portableData, webViewHome, installCLI}
+	saved := []any{installTarget, downloadFolder, fileVersion, portableData, webViewHome, installCLI, legacyInstall}
 	wasRead, wasWrite, wasAsk := recordedDir, recordDir, AskFolder
 	wasDeclined, wasDecline := declinedExe, declineExe
 	t.Cleanup(func() {
@@ -50,8 +50,12 @@ func newInstallFixture(t *testing.T) *installFixture {
 		portableData = saved[3].(func() string)
 		webViewHome = saved[4].(func(string) string)
 		installCLI = saved[5].(func(string, string) error)
+		legacyInstall = saved[6].(func() string)
 	})
 	installTarget = func() string { return f.to }
+	// no copy installed under the old name: retireOldInstall touches
+	// nothing the test machine has
+	legacyInstall = func() string { return "" }
 	downloadFolder = func(dir string) bool { return samePath(dir, f.downloads) }
 	fileVersion = func(p string) uint64 {
 		for k, v := range f.versions {
@@ -136,6 +140,57 @@ func TestSettleInstallsADownload(t *testing.T) {
 	left, _ := filepath.Glob(filepath.Join(filepath.Dir(f.to), ".magpie-install-*"))
 	if len(left) != 0 {
 		t.Fatalf("staging files left: %v", left)
+	}
+}
+
+// The copy installed while the app was called magpie is retired once this
+// one is in place: its files go, and the folder with them; a file it
+// didn't write is the user's, and the folder stays with it.
+func TestSettleRetiresTheOldInstall(t *testing.T) {
+	f := newInstallFixture(t)
+	root := filepath.Dir(f.downloads)
+	oldDir := filepath.Join(root, "Local", "Programs", "magpie")
+	oldExe := filepath.Join(oldDir, "magpie.exe")
+	if err := os.MkdirAll(oldDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"magpie.exe", "magpie.com", "magpie.exe.old"} {
+		if err := os.WriteFile(filepath.Join(oldDir, name), []byte("MZ old"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	legacyInstall = func() string { return oldExe }
+	if _, err := settle(f.exe); err != nil {
+		t.Fatal(err)
+	}
+	if exists(oldExe) || exists(filepath.Join(oldDir, "magpie.com")) || exists(filepath.Join(oldDir, "magpie.exe.old")) {
+		t.Fatal("the old install's files are still there")
+	}
+	if exists(oldDir) {
+		t.Fatal("the emptied folder is still there")
+	}
+
+	g := newInstallFixture(t)
+	oldDir = filepath.Join(filepath.Dir(g.downloads), "Local", "Programs", "magpie")
+	oldExe = filepath.Join(oldDir, "magpie.exe")
+	if err := os.MkdirAll(oldDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(oldExe, []byte("MZ old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(oldDir, "notes.txt"), []byte("mine"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	legacyInstall = func() string { return oldExe }
+	if _, err := settle(g.exe); err != nil {
+		t.Fatal(err)
+	}
+	if exists(oldExe) {
+		t.Fatal("the old exe is still there")
+	}
+	if !exists(filepath.Join(oldDir, "notes.txt")) {
+		t.Fatal("a file the app didn't write was removed")
 	}
 }
 
@@ -249,7 +304,7 @@ func TestSettleKeepsTheWebViewProfile(t *testing.T) {
 	}
 
 	g := newInstallFixture(t)
-	for _, d := range []string{"magpie-windows-amd64.exe", "magpie.exe"} {
+	for _, d := range []string{"magpie-windows-amd64.exe", "haogeai.exe"} {
 		if err := os.MkdirAll(filepath.Join(g.profiles, d), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -258,7 +313,7 @@ func TestSettleKeepsTheWebViewProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 	if exists(filepath.Join(filepath.Dir(g.to), "webview-profile")) {
-		t.Fatal("pointed away from magpie.exe's own profile")
+		t.Fatal("pointed away from haogeai.exe's own profile")
 	}
 }
 
@@ -424,13 +479,13 @@ func TestInFolder(t *testing.T) {
 // Discord).
 func TestSettleInstallsWhereTheUserChose(t *testing.T) {
 	f := newInstallFixture(t)
-	mine := filepath.Join(filepath.Dir(f.downloads), "D", "Apps", "magpie")
+	mine := filepath.Join(filepath.Dir(f.downloads), "D", "Apps", "haogeai")
 	f.ask(t, mine)
 	to, err := settle(f.exe)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := filepath.Join(mine, "magpie.exe")
+	want := filepath.Join(mine, exeName)
 	if to != want {
 		t.Fatalf("settle opens %q, want %q", to, want)
 	}
@@ -519,12 +574,15 @@ func TestSettleOffersTheChosenFolderAgain(t *testing.T) {
 	}
 }
 
-// A folder picked is used as it is when named magpie, else a magpie
+// A folder picked is used as it is when named haogeai (or magpie, the
+// folder the app was installed in before the rename), else a haogeai
 // folder goes inside it.
 func TestInstallDir(t *testing.T) {
 	root := t.TempDir()
 	for _, c := range []struct{ picked, want string }{
-		{filepath.Join(root, "Apps"), filepath.Join(root, "Apps", "magpie")},
+		{filepath.Join(root, "Apps"), filepath.Join(root, "Apps", "haogeai")},
+		{filepath.Join(root, "Apps", "haogeai"), filepath.Join(root, "Apps", "haogeai")},
+		{filepath.Join(root, "Apps", "HAOGEAI") + string(filepath.Separator), filepath.Join(root, "Apps", "HAOGEAI")},
 		{filepath.Join(root, "Apps", "magpie"), filepath.Join(root, "Apps", "magpie")},
 		{filepath.Join(root, "Apps", "Magpie") + string(filepath.Separator), filepath.Join(root, "Apps", "Magpie")},
 	} {

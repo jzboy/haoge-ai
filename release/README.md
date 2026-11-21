@@ -2,6 +2,9 @@
 
 本目录只保留 dmg（CI 提交回来）。Windows 安装包名为 `haoge-ai-Windows-amd64.exe`，只走 Releases。
 
+安装后：Windows 在 `%LOCALAPPDATA%\Programs\haogeai\haogeai.exe`，开始菜单显示「浩哥AI」；
+macOS 为 `浩哥AI.app`（包内可执行文件 `haogeai`）。旧的 `magpie` 安装会被新版本自动替换并清理。
+
 | 文件 | 平台 | 说明 |
 | --- | --- | --- |
 | `haoge-ai-macos-arm64.dmg` | macOS arm64 | **由 CI 产出**（见下）；Windows 上无法构建 |

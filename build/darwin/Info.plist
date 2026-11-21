@@ -5,8 +5,8 @@
 	<key>CFBundleName</key><string>浩哥AI</string>
 	<key>CFBundleDisplayName</key><string>浩哥AI</string>
 	<key>CFBundleIdentifier</key><string>ai.haoge.haogeai</string>
-	<key>CFBundleExecutable</key><string>magpie</string>
-	<key>CFBundleIconFile</key><string>magpie</string>
+	<key>CFBundleExecutable</key><string>haogeai</string>
+	<key>CFBundleIconFile</key><string>haogeai</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
 	<key>CFBundleShortVersionString</key><string>@VERSION@</string>
 	<key>CFBundleVersion</key><string>@VERSION@</string>

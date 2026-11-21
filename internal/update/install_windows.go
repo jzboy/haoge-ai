@@ -1,6 +1,7 @@
 package update
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	ptr "unsafe"
@@ -11,10 +12,25 @@ import (
 	"github.com/yetone/magpie/internal/appdir"
 )
 
-// installPath is %LOCALAPPDATA%\Programs\magpie\magpie.exe: the user's own
-// programs folder (FOLDERID_UserProgramFiles), where per-user installers
-// put their apps, which needs no administrator.
+// installPath is %LOCALAPPDATA%\Programs\haogeai\haogeai.exe: the user's
+// own programs folder (FOLDERID_UserProgramFiles), where per-user
+// installers put their apps, which needs no administrator. It was
+// Programs\magpie\magpie.exe while the app was called magpie; that install
+// is retired (retireOldInstall) once this one is in place.
 func installPath() string {
+	local := appdir.Getenv("LOCALAPPDATA")
+	if local == "" {
+		if p, err := windows.KnownFolderPath(windows.FOLDERID_UserProgramFiles, 0); err == nil && p != "" {
+			return filepath.Join(p, "haogeai", "haogeai.exe")
+		}
+		return ""
+	}
+	return filepath.Join(local, "Programs", "haogeai", "haogeai.exe")
+}
+
+// legacyInstallPath is where the app installed itself while it was called
+// magpie: %LOCALAPPDATA%\Programs\magpie\magpie.exe, "" off Windows.
+func legacyInstallPath() string {
 	local := appdir.Getenv("LOCALAPPDATA")
 	if local == "" {
 		if p, err := windows.KnownFolderPath(windows.FOLDERID_UserProgramFiles, 0); err == nil && p != "" {
@@ -94,21 +110,27 @@ func hide(p string) {
 }
 
 // installKey holds InstallLocation, the folder the user chose to install
-// magpie in (Settle). Uninstall removes it. A var so the test writes a
+// the app in (Settle). Uninstall removes it. A var so the test writes a
 // key of its own.
-var installKey = `Software\magpie`
+var installKey = `Software\haogeai`
+
+// legacyInstallKey is where the key was while the app was called magpie:
+// a folder chosen there is still the one to install in.
+var legacyInstallKey = `Software\magpie`
 
 func readInstallDir() string {
-	k, err := registry.OpenKey(registry.CURRENT_USER, installKey, registry.QUERY_VALUE)
-	if err != nil {
-		return ""
+	for _, key := range []string{installKey, legacyInstallKey} {
+		k, err := registry.OpenKey(registry.CURRENT_USER, key, registry.QUERY_VALUE)
+		if err != nil {
+			continue
+		}
+		v, _, err := k.GetStringValue("InstallLocation")
+		k.Close()
+		if err == nil && v != "" {
+			return v
+		}
 	}
-	defer k.Close()
-	v, _, err := k.GetStringValue("InstallLocation")
-	if err != nil {
-		return ""
-	}
-	return v
+	return ""
 }
 
 func writeInstallDir(dir string) error {
@@ -125,16 +147,18 @@ func writeInstallDir(dir string) error {
 const declinedValue = "NotInstalled"
 
 func readDeclined() string {
-	k, err := registry.OpenKey(registry.CURRENT_USER, installKey, registry.QUERY_VALUE)
-	if err != nil {
-		return ""
+	for _, key := range []string{installKey, legacyInstallKey} {
+		k, err := registry.OpenKey(registry.CURRENT_USER, key, registry.QUERY_VALUE)
+		if err != nil {
+			continue
+		}
+		v, _, err := k.GetStringValue(declinedValue)
+		k.Close()
+		if err == nil && v != "" {
+			return v
+		}
 	}
-	defer k.Close()
-	v, _, err := k.GetStringValue(declinedValue)
-	if err != nil {
-		return ""
-	}
-	return v
+	return ""
 }
 
 func writeDeclined(exe string) error {
@@ -146,11 +170,17 @@ func writeDeclined(exe string) error {
 	return k.SetStringValue(declinedValue, exe)
 }
 
-// ForgetInstallDir takes out the record of the folder magpie was
+// ForgetInstallDir takes out the record of the folder the app was
 // installed in, and of a copy kept uninstalled, and its key once nothing
-// else is in it.
+// else is in it — the key it wrote while it was called magpie too.
 func ForgetInstallDir() error {
-	k, err := registry.OpenKey(registry.CURRENT_USER, installKey, registry.SET_VALUE|registry.QUERY_VALUE)
+	return errors.Join(forgetKey(installKey), forgetKey(legacyInstallKey))
+}
+
+// forgetKey takes InstallLocation and the declined copy out of key, and
+// the key itself once nothing else is in it.
+func forgetKey(key string) error {
+	k, err := registry.OpenKey(registry.CURRENT_USER, key, registry.SET_VALUE|registry.QUERY_VALUE)
 	if err != nil {
 		return nil
 	}
@@ -164,7 +194,7 @@ func ForgetInstallDir() error {
 		return err
 	}
 	if n != nil && n.ValueCount == 0 && n.SubKeyCount == 0 {
-		if err := registry.DeleteKey(registry.CURRENT_USER, installKey); err != nil && err != registry.ErrNotExist {
+		if err := registry.DeleteKey(registry.CURRENT_USER, key); err != nil && err != registry.ErrNotExist {
 			return err
 		}
 	}

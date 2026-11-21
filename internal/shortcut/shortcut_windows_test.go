@@ -99,3 +99,54 @@ func TestInstalledAppsEntry(t *testing.T) {
 		t.Fatal("an entry for an exe that is gone stayed")
 	}
 }
+
+// The entries the app wrote while it was called magpie go with the rename:
+// its Start menu shortcut, and the App Paths and Installed apps entries
+// whose exe is gone.
+func TestRemoveLegacy(t *testing.T) {
+	dir := t.TempDir()
+	lnk := filepath.Join(dir, "Start Menu", "Programs", Name+".lnk")
+	if err := os.MkdirAll(filepath.Dir(lnk), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	old := filepath.Join(filepath.Dir(lnk), legacyName+".lnk")
+	if err := os.WriteFile(old, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	wasMenu, wasApp, wasUn := startMenu, legacyAppPath, legacyUninstallKey
+	testApp := `Software\magpie-test\` + t.Name() + `\App Paths\magpie.exe`
+	testUn := `Software\magpie-test\` + t.Name() + `\Uninstall\magpie`
+	startMenu = func() (string, error) { return lnk, nil }
+	legacyAppPath, legacyUninstallKey = testApp, testUn
+	t.Cleanup(func() {
+		startMenu, legacyAppPath, legacyUninstallKey = wasMenu, wasApp, wasUn
+		for _, key := range []string{testApp, testUn} {
+			registry.DeleteKey(registry.CURRENT_USER, key)
+		}
+		registry.DeleteKey(registry.CURRENT_USER, `Software\magpie-test\`+t.Name()+`\App Paths`)
+		registry.DeleteKey(registry.CURRENT_USER, `Software\magpie-test\`+t.Name()+`\Uninstall`)
+		registry.DeleteKey(registry.CURRENT_USER, `Software\magpie-test\`+t.Name())
+	})
+	gone := filepath.Join(dir, "Programs", "magpie", "magpie.exe")
+	write := func(key, value, v string) {
+		k, _, err := registry.CreateKey(registry.CURRENT_USER, key, registry.SET_VALUE)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer k.Close()
+		if err := k.SetStringValue(value, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(legacyAppPath, "", gone)
+	write(legacyUninstallKey, "DisplayIcon", gone+",0")
+	removeLegacy()
+	if exists(old) {
+		t.Fatal("the old Start menu shortcut is still there")
+	}
+	for _, key := range []string{legacyAppPath, legacyUninstallKey} {
+		if _, err := registry.OpenKey(registry.CURRENT_USER, key, registry.QUERY_VALUE); err == nil {
+			t.Fatalf("%s is still there", key)
+		}
+	}
+}

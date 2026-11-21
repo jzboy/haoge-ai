@@ -2,6 +2,7 @@ package shortcut
 
 import (
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,9 +16,17 @@ import (
 	"github.com/yetone/magpie/internal/appdir"
 )
 
-// appPath is where Win+R and `start magpie` look magpie.exe up: the user's
-// own, no administrator needed. A var so the test writes a key of its own.
-var appPath = `Software\Microsoft\Windows\CurrentVersion\App Paths\magpie.exe`
+// appPath is where Win+R and `start haogeai` look haogeai.exe up: the
+// user's own, no administrator needed. A var so the test writes a key of
+// its own.
+var appPath = `Software\Microsoft\Windows\CurrentVersion\App Paths\haogeai.exe`
+
+// legacyAppPath and legacyUninstallKey are the entries the app wrote while
+// it was called magpie; removeLegacy takes them out with its shortcut.
+var (
+	legacyAppPath     = `Software\Microsoft\Windows\CurrentVersion\App Paths\magpie.exe`
+	legacyUninstallKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\magpie`
+)
 
 func registerAppPath(exe string) {
 	if k, _, err := registry.CreateKey(registry.CURRENT_USER, appPath, registry.SET_VALUE); err == nil {
@@ -35,7 +44,7 @@ func registerAppPath(exe string) {
 // gateway that was gone (Jevik_AI on X). Its Uninstall runs magpie's own
 // (UninstallCommand), which puts every agent back first. A var so the
 // test writes a key of its own.
-var uninstallKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\magpie`
+var uninstallKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\haogeai`
 
 // registerUninstall writes the entry for exe, at every start, so it
 // follows an exe that was moved.
@@ -93,6 +102,42 @@ func startMenuLink() (string, error) {
 		return "", err
 	}
 	return filepath.Join(dir, Name+".lnk"), nil
+}
+
+// removeLegacy takes out what the app left under the name magpie while it
+// was called that: the Start menu shortcut it made then, its App Paths
+// entry and its entry in Installed apps — each while it opens a copy that
+// is gone (the folder retired with the rename). A copy still there is
+// kept, entry and all.
+func removeLegacy() {
+	if lnk, err := startMenu(); err == nil {
+		old := filepath.Join(filepath.Dir(lnk), legacyName+".lnk")
+		if err := os.Remove(old); err != nil && !os.IsNotExist(err) {
+			log.Println("start menu shortcut:", err)
+		}
+	}
+	removeIfGone(legacyAppPath, "")
+	removeIfGone(legacyUninstallKey, "DisplayIcon")
+}
+
+// removeIfGone deletes key once the exe its value names is gone, or the
+// value is empty; another copy's entry stays.
+func removeIfGone(key, value string) {
+	k, err := registry.OpenKey(registry.CURRENT_USER, key, registry.QUERY_VALUE)
+	if err != nil {
+		return
+	}
+	v, _, _ := k.GetStringValue(value)
+	k.Close()
+	v = strings.TrimSuffix(strings.TrimSpace(v), ",0")
+	if v != "" {
+		if _, err := os.Stat(v); err == nil {
+			return // a copy is still there: its entry
+		}
+	}
+	if err := registry.DeleteKey(registry.CURRENT_USER, key); err != nil && err != registry.ErrNotExist {
+		log.Println("start menu shortcut:", err)
+	}
 }
 
 func writeShortcut(lnk, exe string) (bool, error) { return write(lnk, exe) }

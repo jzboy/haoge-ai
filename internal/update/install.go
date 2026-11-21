@@ -22,7 +22,7 @@ import (
 // beside it in Downloads (lucky_eagle_38410 on Discord). So the desktop
 // app, opened from a folder downloads land in, installs itself the way a
 // Mac app is moved into Applications: it copies itself to
-// %LOCALAPPDATA%\Programs\magpie\magpie.exe — the user's own programs
+// %LOCALAPPDATA%\Programs\haogeai\haogeai.exe — the user's own programs
 // folder, no administrator — puts that folder on the user's PATH, and
 // opens the copy there, which makes the shortcut, Open at login and its
 // updates name it. The download is left where it is: it is the user's
@@ -65,9 +65,12 @@ const installedFromEnv = "MAGPIE_INSTALLED_FROM"
 
 // What Settle asks of the system; tests set them.
 var (
-	// installTarget is %LOCALAPPDATA%\Programs\magpie\magpie.exe, "" off
+	// installTarget is %LOCALAPPDATA%\Programs\haogeai\haogeai.exe, "" off
 	// Windows
 	installTarget = installPath
+	// legacyInstall is %LOCALAPPDATA%\Programs\magpie\magpie.exe, the copy
+	// installed while the app was called magpie, "" off Windows
+	legacyInstall = legacyInstallPath
 	// downloadFolder says whether dir is one downloads land in:
 	// Downloads, the Desktop or a temporary folder (an exe opened from
 	// inside a zip); not a folder inside them, the home folder or
@@ -95,9 +98,10 @@ var (
 )
 
 // downloadName is the name the site's Windows download has, with the
-// suffix a browser adds to a second one: magpie-windows-amd64.exe,
-// magpie-windows-arm64 (1).exe.
-var downloadName = lazyre.New(`(?i)^magpie-windows-(amd64|arm64)\b[^\\/]*\.exe$`)
+// suffix a browser adds to a second one: haoge-ai-Windows-amd64.exe,
+// haoge-ai-Windows-arm64 (1).exe — and the name before the rename
+// (magpie-windows-amd64.exe), which an older download still has.
+var downloadName = lazyre.New(`(?i)^(magpie|haoge-?ai)-?(windows-)?(amd64|arm64)\b[^\\/]*\.exe$`)
 
 // isDownload says whether exe is a download Settle installs: one in a
 // folder downloads land in, or one kept elsewhere under the download's
@@ -129,14 +133,15 @@ var ErrNeedsAdmin = errors.New("only an administrator can write to this folder")
 var ErrDownloadFolder = errors.New("downloads land in this folder")
 
 // InstallDir is the folder a folder picked in AskFolder's dialog means:
-// itself when it is named magpie, else a magpie folder inside it, as
-// installers do.
+// itself when it is named haogeai (or magpie, the app's folder before the
+// rename), else a haogeai folder inside it, as installers do.
 func InstallDir(picked string) string {
 	picked = filepath.Clean(picked)
-	if strings.EqualFold(filepath.Base(picked), "magpie") {
+	switch base := strings.ToLower(filepath.Base(picked)); base {
+	case "haogeai", "haoge-ai", "magpie":
 		return picked
 	}
-	return filepath.Join(picked, "magpie")
+	return filepath.Join(picked, "haogeai")
 }
 
 // Installable says why dir can't be installed in, nil when it can: a
@@ -202,7 +207,7 @@ func writeErr(err error) error {
 }
 
 // exeName is what the installed copy is called.
-const exeName = "magpie.exe"
+const exeName = "haogeai.exe"
 
 // installed is where magpie is installed: the folder the user chose, else
 // the default; ok is false when neither holds it, and to is then where
@@ -338,7 +343,45 @@ func installFresh(exe, to string) error {
 		// line says it isn't there and offers it again
 		log.Println("install: the magpie command:", err)
 	}
+	retireOldInstall(to)
 	return nil
+}
+
+// retireOldInstall takes out the copy the app installed while it was
+// called magpie (%LOCALAPPDATA%\Programs\magpie\magpie.exe), now that this
+// one is in place: the files it wrote there, and the folder when it is
+// empty then. Its Start menu shortcut, App Paths, Installed apps and login
+// item entries go with it (shortcut.removeLegacy, autostart.refresh). A
+// file it didn't write is the user's, and stays.
+func retireOldInstall(keep string) {
+	old := legacyInstall()
+	if old == "" || samePath(old, keep) || samePath(filepath.Dir(old), filepath.Dir(keep)) {
+		return
+	}
+	if !exists(old) {
+		return
+	}
+	dir := filepath.Dir(old)
+	files := []string{
+		filepath.Join(dir, "magpie.exe"),
+		filepath.Join(dir, "magpie.com"),
+		filepath.Join(dir, "magpie.cmd"),
+		filepath.Join(dir, "magpie.exe.new"),
+	}
+	for _, pat := range []string{"magpie.exe.old", "magpie.exe.old-*"} {
+		if more, err := filepath.Glob(filepath.Join(dir, pat)); err == nil {
+			files = append(files, more...)
+		}
+	}
+	for _, p := range files {
+		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+			log.Println("install: retiring", p+":", err)
+		}
+	}
+	if err := os.Remove(dir); err != nil && !os.IsNotExist(err) {
+		// another file is the user's: the folder stays
+		return
+	}
 }
 
 // keepWebView has the copy at to keep the webview profile exe had: the

@@ -603,7 +603,7 @@ var bundleExecutableKey = lazyre.New(`<key>CFBundleExecutable</key>\s*<string>([
 
 // bundleExecutable is the name of the program in bundle's Contents/MacOS:
 // the one its Info.plist names, else this one's own when it runs from
-// that bundle, else magpie.
+// that bundle, else haogeai.
 func bundleExecutable(bundle string) string {
 	if b, err := os.ReadFile(filepath.Join(bundle, "Contents", "Info.plist")); err == nil {
 		if m := bundleExecutableKey.FindSubmatch(b); m != nil {
@@ -615,7 +615,7 @@ func bundleExecutable(bundle string) string {
 	if exe, err := Executable(); err == nil && filepath.Dir(exe) == filepath.Join(bundle, "Contents", "MacOS") {
 		return filepath.Base(exe)
 	}
-	return "magpie"
+	return "haogeai"
 }
 
 // retried is a shell command that runs command until it succeeds, sleeping

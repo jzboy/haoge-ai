@@ -8,7 +8,12 @@ import (
 
 const (
 	runKey = `Software\Microsoft\Windows\CurrentVersion\Run`
-	name   = "magpie"
+	// name is the Run value, and the Startup apps entry, this copy writes.
+	name = "haogeai"
+	// legacyName is what it was called while the app was magpie: refresh
+	// moves a value written then over to name, and its Startup apps marker
+	// with it.
+	legacyName = "magpie"
 	// where Task Manager's Startup apps keeps an entry switched off: an odd
 	// first byte is off
 	approvedKey = `Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run`
@@ -79,10 +84,13 @@ func clearApprovedMarker() error {
 		return nil // no marker is nothing to clear
 	}
 	defer a.Close()
-	if err := a.DeleteValue(name); err != nil && !errors.Is(err, registry.ErrNotExist) {
-		return err
+	var errs []error
+	for _, n := range []string{name, legacyName} {
+		if err := a.DeleteValue(n); err != nil && !errors.Is(err, registry.ErrNotExist) {
+			errs = append(errs, err)
+		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // the user's own Run value, which Windows starts at sign-in (and which
@@ -109,14 +117,59 @@ func disable() error {
 		return nil // no Run key is nothing to turn off
 	}
 	defer k.Close()
-	if err := k.DeleteValue(name); err != nil && !errors.Is(err, registry.ErrNotExist) {
-		return err
+	var errs []error
+	for _, n := range []string{name, legacyName} {
+		if err := k.DeleteValue(n); err != nil && !errors.Is(err, registry.ErrNotExist) {
+			errs = append(errs, err)
+		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
-// refresh: nothing an older magpie wrote here needs writing again
-func refresh() error { return nil }
+// refresh moves a Run value an older version wrote under the name magpie
+// over to this app's name, opening this copy: the folder that value named
+// is the install the rename retired. The Startup apps marker comes with
+// it, so a value the user switched off there stays off.
+func refresh() error {
+	k, err := openRunKey(registry.CURRENT_USER, runKey, registry.QUERY_VALUE|registry.SET_VALUE)
+	if err != nil {
+		return nil // no Run key: nothing an older version wrote
+	}
+	defer k.Close()
+	if _, _, err := k.GetStringValue(name); err == nil {
+		return nil // this app's own, as it is
+	}
+	if _, _, err := k.GetStringValue(legacyName); err != nil {
+		return nil // none
+	}
+	exe, err := self()
+	if err != nil {
+		return err
+	}
+	if err := k.SetStringValue(name, `"`+exe+`" `+Arg); err != nil {
+		return err
+	}
+	_ = k.DeleteValue(legacyName)
+	return moveApprovedMarker()
+}
+
+// moveApprovedMarker gives this app's Run value the marker an older
+// version's had in Startup apps, so one switched off there stays off.
+func moveApprovedMarker() error {
+	a, err := openApprovedKey(registry.CURRENT_USER, approvedKey, registry.QUERY_VALUE|registry.SET_VALUE)
+	if err != nil {
+		return nil // none: on
+	}
+	defer a.Close()
+	b, _, err := a.GetBinaryValue(legacyName)
+	if err != nil {
+		return nil
+	}
+	if err := a.SetBinaryValue(name, b); err != nil {
+		return err
+	}
+	return a.DeleteValue(legacyName)
+}
 
 // heldBack: nothing here is switched off apart from the record itself
 func heldBack() bool { return false }

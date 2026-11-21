@@ -129,6 +129,14 @@ func refresh() error {
 		return nil // not one magpie wrote
 	}
 	exe := html.UnescapeString(string(m[1]))
+	if _, err := os.Stat(exe); err != nil {
+		// the program it named is gone — the bundle's executable was
+		// renamed (haogeai), or the app moved and the old copy went: the
+		// login item follows this one, and nothing else about it changes
+		if now, err := self(); err == nil {
+			exe = now
+		}
+	}
 	if associated(exe) == "" && bytes.Contains(b, []byte("<key>AssociatedBundleIdentifiers</key>")) {
 		return nil // the app's Info.plist didn't read this time: not a reason to drop its name
 	}

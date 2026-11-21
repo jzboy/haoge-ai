@@ -12,7 +12,7 @@
 //	go run build/icon/gen.go app 64 internal/gui/icon.png   # app icon at a given size
 //	go run build/icon/gen.go win 256 build/windows/icon-256.png # the Windows tile, filling its square
 //	go run build/icon/gen.go win-ico internal/gui/icon-windows.ico # it at the tray's sizes, one .ico
-//	go run build/icon/gen.go icns build/darwin/magpie.icns  # the macOS bundle icon, PNG blocks (no iconutil)
+//	go run build/icon/gen.go icns build/darwin/haogeai.icns  # the macOS bundle icon, PNG blocks (no iconutil)
 //	make icons                                              # regenerates all of them
 package main
 
