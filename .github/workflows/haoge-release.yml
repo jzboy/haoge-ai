@@ -83,6 +83,12 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && startsWith(github.ref, 'refs/tags/')
     steps:
+      # the notes come from RELEASE_NOTES.md, which no job before this one
+      # checks out (they only build): without it sed fails and the Release
+      # is never made (v1.7's run, exit code 2)
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: RELEASE_NOTES.md
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -102,10 +108,12 @@ jobs:
           # and this tag's own section; a tag without one says so plainly
           notes=dist/release-notes.md
           {
-            sed -n '/<!-- intro -->/,/<!-- \/intro -->/p' RELEASE_NOTES.md | sed '1d;$d'
-            echo
+            if [ -f RELEASE_NOTES.md ]; then
+              sed -n '/<!-- intro -->/,/<!-- \/intro -->/p' RELEASE_NOTES.md | sed '1d;$d'
+              echo
+              body=$(awk -v t="## $TAG" '$0==t{f=1;next} f&&/^## /{exit} f' RELEASE_NOTES.md)
+            fi
             echo "## 本次更新"
-            body=$(awk -v t="## $TAG" '$0==t{f=1;next} f&&/^## /{exit} f' RELEASE_NOTES.md)
             if [ -n "$body" ]; then echo "$body"; else echo "- 问题修复与体验改进。"; fi
           } > "$notes"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
