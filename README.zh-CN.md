@@ -130,11 +130,6 @@ export GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:3425 GEMINI_API_KEY=magpie
 
 ### 用量和花费
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/usage-zh-dark.png">
-  <img src="site/public/img/usage-zh-light.png" width="900" alt="用量页：余额、token、缓存命中率和花费">
-</picture>
-
 | | |
 | :-- | :-- |
 | **token 和花费** | token、缓存读写、推理和调用次数，按官方价格算花费，美元或人民币；任何模型都能自定义价格 |
