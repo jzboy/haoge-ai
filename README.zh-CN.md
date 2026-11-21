@@ -6,7 +6,6 @@
 
 ### 浩哥AI：所有 Agent 的模型，一处搞定。
 
-**基于 [yetone/magpie](https://github.com/yetone/magpie)（MIT）二次开发。**<br>
 五个 Agent、四家供应商，共用一个本地网关；额度用完时自动切到你的下一个账号。
 
 [![Release](https://img.shields.io/github/v/release/jzboy/haoge-ai?label=release&color=111111)](https://github.com/jzboy/haoge-ai/releases/latest) [![Stars](https://img.shields.io/github/stars/jzboy/haoge-ai?style=flat&color=111111)](https://github.com/jzboy/haoge-ai/stargazers) [![License](https://img.shields.io/badge/license-MIT-111111)](LICENSE)<br>
@@ -29,34 +28,12 @@
 
 支持 macOS、Windows 和 Linux（菜单栏应用、窗口、TUI、Web 界面和 CLI），也能跑在 Docker 和 Termux 上。
 
-## 快速开始
-
-**1 · 安装**。从 **[usemagpie.ai](https://usemagpie.ai/zh/)** 下载应用，或者运行：
-
-```sh
-curl -fsSL https://usemagpie.ai/install.sh | sh
-```
 
 <sub>Mac 版已签名并公证，每个发布文件都带 GitHub Actions 构建证明（`gh attestation verify <file> -R yetone/magpie-releases`），每个版本都会自动更新。Linux 上脚本装桌面版，桌面上没装 WebKitGTK 4.1 时会先用系统的包管理器装上（sudo 会要密码）；没有桌面或没有终端可问时装终端版，并告诉你该装哪个包。用 `--gui` 或 `--tui` 可以自己选。网络受限时可用 `--proxy` 或 `--mirror`。也可以 `go install github.com/yetone/magpie@latest`，或者用 [Docker 镜像](https://usemagpie.ai/docs/zh/docker)。 用 `curl -fsSL https://usemagpie.ai/install.sh | sh -s -- --uninstall` 卸载：先把 Agent 恢复成原来的配置，再拿掉脚本装上的东西（haoge-ai 已被删掉时会临时下载一个来恢复）；`~/.config/magpie` 里的设置会保留，加 `--purge` 才一起删除。</sub>
 
 **2 · 添加 provider**。打开 haoge-ai，进入 **Providers → 添加 provider**。选一个预设、粘贴 key，或者登录一个订阅。
 
 **3 · 选模型**。在 **Agents** 页给每个 Agent 选一个模型。开一个新会话就用上了。
-
-也可以全程在终端里操作：
-
-```sh
-magpie provider add deepseek sk-…              # 预设只需要 key
-magpie claude deepseek/deepseek-v4-pro          # Claude Code 用 DeepSeek
-magpie codex moonshot/kimi-k2.5                 # Codex 用 Kimi
-magpie group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=smart
-magpie claude group/opus-anywhere               # 在多个订阅间自动切换
-magpie save work && magpie use work             # 方案
-magpie quota                                    # 每个套餐还剩多少
-magpie settings set theme dark                  # 设置里的每一项，也能在终端改
-magpie tool generate_image "一只喜鹊，水彩" -o hero.png   # 直接调用 magpie 的生图、识图、搜索工具
-magpie tui                                      # 全部功能，在终端里
-```
 
 haoge-ai 通过读取智能体的登录信息（Claude Code 和 Codex 的文件、钥匙串）找到它们登录的订阅。不想让它读取，可以在 设置 → 隐私 里关闭「订阅账号」，或运行 `magpie accounts discovery off`（`on` 重新开启）。`MAGPIE_NO_ACCOUNTS=1` 只对这一次运行关闭，不改动保存的设置。API Key 服务商不受影响。
 
@@ -94,31 +71,6 @@ export GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:3425 GEMINI_API_KEY=magpie
 
 点一下模型，弹出可搜索的列表：你添加的每个 provider 的每个模型，格式是 `provider/model`。选中后 haoge-ai 原子地改写 Agent 的配置，注释、顺序和格式原样保留。**方案**（Profile）把所有 Agent 的配置存成一个名字，比如「省钱」「专注」，一键全部切回去。每个 Agent 还可以有自己的常用模型短名单，方案也会一并保存。
 
-<table>
-<tr>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/panel-dark.png">
-  <img src="site/public/img/panel-light.png" alt="菜单栏面板">
-</picture>
-</td>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/picker-dark.png">
-  <img src="site/public/img/picker-light.png" alt="模型选择器">
-</picture>
-</td>
-</tr>
-</table>
-
-### 隐私脱敏
-
-Agent 会把读到的东西放进提示词：一个 `.env`、一份配置、一段带 token 的日志。打开脱敏后，请求离开电脑前，haoge-ai 在本地把这些值换成占位符，回复里再换回来。Agent 和你的文件里始终是真值，厂商一个也看不到。
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/masking-zh-dark.png">
-  <img src="site/public/img/masking-zh-light.png" width="900" alt="观测 › 脱敏：7 天里没让厂商看到的 5,812 处，从 Claude Code 和 Codex 经 haoge-ai 流向 OpenAI、Kimi 和 DeepSeek，以及每个请求遮掉的值">
-</picture>
 
 | | |
 | :-- | :-- |
@@ -167,47 +119,6 @@ Agent 会把读到的东西放进提示词：一个 `.env`、一份配置、一�
 | **`usage`** | 优先用用得最少的成员 |
 | **`pace`** | 优先用距离重置前每小时剩余周额度最多的账号 |
 
-只要厂商的提示词缓存还值得保留，**对话就留在回答它的那个账号上**。路由组可以嵌套。[**意图路由**](https://usemagpie.ai/docs/zh/intent)由你选的一个小模型读每一轮新消息，写测试交给强模型，简单问题交给便宜的模型。路由页实时展示每一次决策。
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/routing-zh-dark.png">
-  <img width="760" src="site/public/img/routing-zh-light.png" alt="路由页：四个 Agent 经过 haoge-ai 连到七个 provider，实时显示">
-</picture>
-
-<table>
-<tr>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/intent-trace-zh-dark.png">
-  <img src="site/public/img/intent-trace-zh-light.png" alt="一轮意图路由，逐步解释">
-</picture>
-</td>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/nested-routing-zh-dark.png">
-  <img src="site/public/img/nested-routing-zh-light.png" alt="路由组里套路由组">
-</picture>
-</td>
-</tr>
-</table>
-
-### 插件
-
-```sh
-magpie plugin add opencode-gemini-auth   # npm 上的 OpenCode 插件
-magpie plugin login google-plugin        # 在 magpie 里走它自己的登录流程
-```
-
-插件运行在 [Bun](https://bun.sh) 上，第一次需要时自动下载。插件负责登录、列出模型和发送请求，Agent 像用其他 provider 一样用它的模型。去 **[magpie-community/plugins](https://github.com/magpie-community/plugins)** 逛逛，或者[自己写一个](https://usemagpie.ai/docs/zh/plugins)。
-
-插件还可以是**网关中间件**：一段 JavaScript，能看到每个 Agent 发出和收到的内容。`onRequest` 可以改写或拒绝请求，`onEvent` 看到每个流式事件，`onResponse` 看到完整回复。钩子抛错或超时，请求原样放行。
-
-```js
-// alias.middleware.js — magpie plugin add ./alias.middleware.js
-export function onRequest(body, ctx) {
-  if (body.model === "fast") return { ...body, model: "deepseek/deepseek-chat" };
-}
-```
 
 <details>
 <summary><b>现成的中间件</b>，大多对应 <a href="https://github.com/QuantumNous/new-api">New API</a> 给渠道做的事，JSON 格式也一样</summary>
@@ -222,10 +133,6 @@ export function onRequest(body, ctx) {
 | `word-guard` | New API 的敏感词过滤：在用户发送的内容和回复里拒绝或屏蔽敏感词 |
 | `think-tags` | 去掉回复里的 `<think>…</think>`，或把 `reasoning_content` 放进回复 |
 
-```sh
-magpie plugin add @magpie-community/middleware-model-map
-magpie plugin options model-map '{"mapping": {"fast": "deepseek/deepseek-chat"}}'
-```
 
 在「插件 › 发现 › 网关中间件」里可以找到它们。详见[网关中间件](https://usemagpie.ai/docs/zh/plugins#middleware)。
 
@@ -246,14 +153,6 @@ magpie plugin options model-map '{"mapping": {"fast": "deepseek/deepseek-chat"}}
 | **上下文** | 每个请求的上下文窗口用了多满、多少来自缓存、被什么占着 |
 | **账单** | 按账号、按上游 key 统计，还能 OTLP 导出到你自己的可观测性系统 |
 
-### 共享
-
-| | |
-| :-- | :-- |
-| **局域网** | 打开「局域网共享」，给每个客户端一个命名的网关 key，各自设每天、每周或每月的 token 和花费上限 |
-| **[远程 haoge-ai](https://usemagpie.ai/docs/zh/remote)** | 笔记本用台式机上那个 haoge-ai 的 provider、账号和路由组，同时照样配置自己的 Agent |
-| **[Docker](https://usemagpie.ai/docs/zh/docker)** | 在服务器或 NAS 上跑 `ghcr.io/yetone/magpie`，用 Web 界面管理 |
-| **同步** | 备份到文件，或者通过 WebDAV（坚果云、Nextcloud……）或 S3 在多台机器间同步 |
 
 ### 还有
 
@@ -264,36 +163,11 @@ magpie plugin options model-map '{"mapping": {"fast": "deepseek/deepseek-chat"}}
 - **WSL**：在 Windows 上，WSL 发行版里的 Agent 一样能配置，会话也一样统计。
 - **保持唤醒**、浅色和深色，在 [Omarchy](https://omarchy.org) 上跟随你的主题。
 
-## 文档
-
-| | |
-| :-- | :-- |
-| **[快速上手](https://usemagpie.ai/docs/zh/start)** | 入门导览 |
-| **[完整参考](docs/reference.md)**（英文） | 每个 Agent、provider 选项、网关接口、CLI 命令和文件 |
-| **[插件](https://usemagpie.ai/docs/zh/plugins)** | 使用插件和编写插件 |
-| **[意图路由](https://usemagpie.ai/docs/zh/intent)** | 按每轮对话的内容选择模型 |
-| **[导入链接](https://usemagpie.ai/docs/zh/import)** | 给 provider 网站用的「添加到 haoge-ai」按钮 |
-| **[远程 haoge-ai](https://usemagpie.ai/docs/zh/remote)** | 在其他电脑上用同一个 haoge-ai 的 provider 和路由组 |
-| **[Docker](https://usemagpie.ai/docs/zh/docker)** | 在服务器或 NAS 上运行 haoge-ai |
 
 ## 隐私
 
 你的提示词、回复、密钥和账号只发给你用的供应商；打开[隐私脱敏](#隐私脱敏)后，其中的密钥连供应商也收不到。正式版 haoge-ai 每天告诉我们一次它在用：一个随机 ID、版本和系统，以及用了哪些 agent、供应商和模型，只用 haoge-ai 自己的 ID（你自己添加的供应商只记作 `custom`），装了 Discover 里的哪些插件（用于显示每个插件的在用人数），以及添加供应商页里排在最前的合作伙伴每天被展示、打开和添加的次数（只有次数）。不发送名称、URL、账号、密钥、提示词和用量。可以在 **设置 → 隐私** 里关掉一部分或全部，也可以设 `DO_NOT_TRACK=1`。合作伙伴的官网和获取 Key 链接经 `usemagpie.ai/go/…` 跳转并计一次点击，usemagpie.ai 也统计合作伙伴列表的拉取次数；这是服务器本身看到的，不受设置影响，不记录 ID 和 IP。插件、导入链接和库里的图标经 `usemagpie.ai/api/icon` 获取，图标所在的服务器只看到 Cloudflare 的地址，看不到你的 IP；这台服务器只转发图片，不计数也不记录。[隐私页](https://usemagpie.ai/docs/zh/privacy)列出了 haoge-ai 自己发出的所有内容，附示例和每个开关；规则见[参考文档](docs/reference.md#counting-users)。
 
-## 社区
-
-有问题、有想法，或者某个模型就是不出现？请到 **[Discord](https://discord.gg/vGSnD3ZKQF)** 反馈。
-
-**本仓库不接受 Pull Request**，只有维护者能提交。想要修复或新功能，请在 Discord 里描述清楚，我们来实现。
-
-如果 haoge-ai 帮你少改了一次配置文件，**点个 ⭐ 能让更多人发现它。**
-
-<a href="https://star-history.com/#yetone/magpie&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=yetone/magpie&type=Date&theme=dark">
-    <img src="https://api.star-history.com/svg?repos=yetone/magpie&type=Date" width="600" alt="Star history">
-  </picture>
-</a>
 
 ## 许可证
 
