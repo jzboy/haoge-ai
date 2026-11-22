@@ -7,6 +7,11 @@
 - **两种产物**：Windows `haoge-ai-Windows-amd64.exe`（WebView2，无需额外依赖）、macOS `haoge-ai-macos-arm64.dmg`（Apple 芯片，未签名，首次打开请右键 → 打开）。
 <!-- /intro -->
 
+## haoge-v1.10
+
+- 资源库「Claude 插件」的发现栏改为卡片网格：每个插件显示作者、分类、简介、源码链接与安装按钮，标题右侧显示结果数与市场名。
+- 官方市场列表更可靠：GitHub 不通时自动改走 jsDelivr，两者都不通时使用内置的 317 条快照，离线也能浏览安装；同时修复了清单里 `source` 为字符串的条目导致整份列表解析失败的问题。
+
 ## haoge-v1.9
 
 - 资源库「Claude 插件」新增发现栏：可直接浏览并一键安装插件市场里的插件，来源包含本机 Claude Code 已添加的市场和 Claude Code 官方市场（claude-plugins-official，317 个插件，重名只列一次，清单每天刷新）。
