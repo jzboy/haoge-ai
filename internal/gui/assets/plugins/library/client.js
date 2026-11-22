@@ -5360,6 +5360,7 @@ magpie.plugin("library", (ctx) => {
 
   function renderPlugins(body) {
     body.append(intro(t("A Claude Code plugin is skills, MCP servers, hooks and subagents in one package. Install it once: magpie gives each part to the agents you pick, and you turn the plugin on, off or remove it as a whole. Its parts also show under their own tabs.")));
+    body.append(pluginDiscover());
     body.append(pluginFind());
     const all = shownAgents();
     const plugins = lib.plugins || [];
@@ -5370,6 +5371,74 @@ magpie.plugin("library", (ctx) => {
     const list = el("div", "list lib-list");
     list.append(...[...plugins].sort((a, b) => a.name.localeCompare(b.name)).map((p) => pluginRow(p, all)));
     body.append(list);
+  }
+
+  // The Discover row: the plugins the marketplaces Claude Code knows offer,
+  // read from this computer's own marketplace files (library/plugins/market).
+  // Its list is filtered as the reader types, and Install takes one through
+  // the same source the Find row below does.
+  let plMarket = null;      // { marketplaces, items } once asked
+  let plMarketErr = "";
+  let plMarketBusy = false;
+  let plMarketQ = "";
+  let plMarketShown = 30;
+
+  function pluginDiscover() {
+    if (!plMarket && !plMarketBusy) {
+      plMarketBusy = true;
+      api("library/plugins/market")
+        .then((m) => { plMarket = m || { items: [] }; }, (e) => { plMarket = { items: [] }; plMarketErr = e.message; })
+        .then(() => { plMarketBusy = false; render(); });
+    }
+    const card = el("div", "list lib-card lib-install lib-pldiscover");
+    const head = el("div", "lib-probehead");
+    head.append(el("span", "note", t("Discover") + " · " + t("Claude plugins")));
+    card.append(head);
+    const line = el("div", "lib-find");
+    const inp = el("input");
+    inp.type = "search";
+    inp.dataset.lib = "pldiscover";
+    inp.placeholder = t("Search") + " " + t("Claude plugins");
+    inp.spellcheck = false;
+    inp.autocomplete = "off";
+    inp.value = plMarketQ;
+    inp.oninput = () => { plMarketQ = inp.value; plMarketShown = 30; draw(); };
+    inp.onkeydown = (e) => e.stopPropagation();
+    line.append(glyph(GLYPH.search, "lib-mini"), inp);
+    card.append(line);
+    if (plMarketErr) card.append(el("div", "lib-err", plMarketErr));
+    const list = el("div", "lib-picks");
+    card.append(list);
+    function draw() {
+      list.replaceChildren();
+      if (!plMarket) { list.append(el("div", "hint", t("Looking…"))); return; }
+      const q = plMarketQ.trim().toLowerCase();
+      const all = (plMarket.items || []).filter((x) => !q || x.name.toLowerCase().includes(q) || (x.description || "").toLowerCase().includes(q) || (x.marketplace || "").toLowerCase().includes(q));
+      if (!all.length) { list.append(el("div", "hint", t("No Claude plugin found there"))); return; }
+      for (const x of all.slice(0, plMarketShown)) list.append(discoverRow(x));
+      if (all.length > plMarketShown) list.append(button(t("Show more"), "", () => { plMarketShown += 30; draw(); }));
+    }
+    draw();
+    return card;
+  }
+
+  function discoverRow(x) {
+    const r = el("div", "lib-pick lib-plpick lib-pldisc" + (x.have ? " dim" : ""));
+    const w = el("span", "who");
+    w.append(el("span", "name", x.name));
+    if (x.description) w.append(el("span", "sub", x.description));
+    w.append(el("span", "sub lib-plparts", x.marketplace));
+    r.append(w);
+    if (x.have) r.append(tag(t("in the library"), ""));
+    else {
+      const add = button(t("Install"), "action", async () => {
+        add.disabled = true;
+        const done = await change("plugins/install", { source: x.source, names: [x.name], agents: shownAgents().map((a) => a.id) }, t("1 plugin installed"));
+        if (done) { plMarket = null; render(); } else add.disabled = false;
+      });
+      r.append(add);
+    }
+    return r;
   }
 
   function pluginFind() {

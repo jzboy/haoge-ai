@@ -251,6 +251,11 @@ func libraryRoutes(mux *http.ServeMux, w Windows) {
 	})
 	// the Claude Code plugins at an address: a folder, a repository, a
 	// marketplace.json (plugin.go); nothing is written
+	// the plugins the marketplaces Claude Code knows offer, read from their
+	// marketplace files here (the tab's Discover row); nothing is fetched
+	mux.HandleFunc("GET /api/library/plugins/market", func(rw http.ResponseWriter, r *http.Request) {
+		writeJSON(rw, library.PluginMarketList())
+	})
 	mux.HandleFunc("POST /api/library/plugins/probe", func(rw http.ResponseWriter, r *http.Request) {
 		var in struct{ Source string }
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {

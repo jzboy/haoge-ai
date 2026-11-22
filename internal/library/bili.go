@@ -187,6 +187,13 @@ func biliPATH(bin string, tools []string, path string) string {
 // name: the agent's own, or for Claude Code with none of the user's, the
 // one magpie runs (claudecode.Find: the one magpie downloaded); "" when
 // there is none.
+// biliNode is node's program, "" when it isn't found: bili is a node
+// script (npm's shim runs node with it), so the folder node is in goes on
+// bili's PATH where magpie found it outside its own — magpie started from
+// the Start menu has no %APPDATA%\npm or nvm Node there, and `bili plugin
+// list` then failed with '"node"' is not recognized.
+func biliNode() string { return proc.FindTool("node") }
+
 func biliTool(a *agent.Agent) string {
 	if p := a.BinPath(); p != "" {
 		return p
@@ -264,11 +271,11 @@ func readBili(agents []*agent.Agent) *BiliView {
 			v.Install = biliShown(c)
 		}
 	} else {
-		if out, err := biliRun(v.Path, nil, 30*time.Second, "--version"); err == nil {
+		if out, err := biliRun(v.Path, []string{biliNode()}, 30*time.Second, "--version"); err == nil {
 			v.Version = biliVersion(out)
 		}
 		v.Saved = readBiliSaved()
-		out, err := biliRun(v.Path, nil, 30*time.Second, "plugin", "list")
+		out, err := biliRun(v.Path, []string{biliNode()}, 30*time.Second, "plugin", "list")
 		if st = parseBiliList(out); err != nil || len(st) == 0 {
 			v.ListErr = lastLines(out, 2)
 			if err != nil {
@@ -389,7 +396,7 @@ func SetBili(id string, on bool) (*BiliView, error) {
 			}
 			snap = append(snap, f)
 		}
-		out, err := biliRun(bin, []string{biliTool(a)}, 2*time.Minute, "plugin", "install", biliLane(id))
+		out, err := biliRun(bin, []string{biliNode(), biliTool(a)}, 2*time.Minute, "plugin", "install", biliLane(id))
 		if err != nil {
 			return nil, err
 		}
@@ -419,7 +426,7 @@ func SetBili(id string, on bool) (*BiliView, error) {
 	for _, p := range paths {
 		cur[p] = biliRead(p)
 	}
-	if _, err := biliRun(bin, []string{biliTool(a)}, 2*time.Minute, "plugin", "remove", biliLane(id)); err != nil {
+	if _, err := biliRun(bin, []string{biliNode(), biliTool(a)}, 2*time.Minute, "plugin", "remove", biliLane(id)); err != nil {
 		return nil, err
 	}
 	snap := state[id]
