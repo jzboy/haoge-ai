@@ -7,6 +7,11 @@
 - **两种产物**：Windows `haoge-ai-Windows-amd64.exe`（WebView2，无需额外依赖）、macOS `haoge-ai-macos-arm64.dmg`（Apple 芯片，未签名，首次打开请右键 → 打开）。
 <!-- /intro -->
 
+## haoge-v1.11
+
+- billion-context 的「安装」按钮现在始终显示；电脑没装 Node/npm 时会自动下载浩哥AI 自带的 Bun 并完成安装，装完即可使用。
+- 修复从开始菜单启动时读不出 billion-context 已装在哪些 Agent 的问题（找不到 node）。
+
 ## haoge-v1.10
 
 - 资源库「Claude 插件」的发现栏改为卡片网格：每个插件显示作者、分类、简介、源码链接与安装按钮，标题右侧显示结果数与市场名。
