@@ -7,6 +7,11 @@
 - **两种产物**：Windows `haoge-ai-Windows-amd64.exe`（WebView2，无需额外依赖）、macOS `haoge-ai-macos-arm64.dmg`（Apple 芯片，未签名，首次打开请右键 → 打开）。
 <!-- /intro -->
 
+## haoge-v1.9
+
+- 资源库「Claude 插件」新增发现栏：可直接浏览并一键安装插件市场里的插件，来源包含本机 Claude Code 已添加的市场和 Claude Code 官方市场（claude-plugins-official，317 个插件，重名只列一次，清单每天刷新）。
+- 修复 billion-context 在从开始菜单启动时读不出 Agent 安装状态的问题（找不到 node）。
+
 ## haoge-v1.8
 
 - 导航精简：移除「路由」「网关」「用量」三个页面入口，以及托盘面板里的「用量（统计）」和「路由」标签。网关、用量记录和路由策略仍在后台照常工作。
