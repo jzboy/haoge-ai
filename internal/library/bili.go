@@ -19,6 +19,7 @@ import (
 	"github.com/yetone/magpie/internal/claudecode"
 	"github.com/yetone/magpie/internal/edit"
 	"github.com/yetone/magpie/internal/lazyre"
+	"github.com/yetone/magpie/internal/plugin"
 	"github.com/yetone/magpie/internal/proc"
 	"github.com/yetone/magpie/internal/settings"
 )
@@ -269,6 +270,9 @@ func readBili(agents []*agent.Agent) *BiliView {
 	if v.Path == "" {
 		if c := biliInstaller(); c != nil {
 			v.Install = biliShown(c)
+		} else if plugin.HasBun() {
+			// no npm here: the Bun magpie keeps for its plugins installs it
+			v.Install = biliShown(biliBunCommand())
 		}
 	} else {
 		if out, err := biliRun(v.Path, []string{biliNode()}, 30*time.Second, "--version"); err == nil {
@@ -746,6 +750,11 @@ func biliMergeJSON(before, after, cur, now *string) (*string, error) {
 	return &s, nil
 }
 
+
+// biliBunCommand is billion-context's install with Bun: the package's own
+// bili.exe shim bun writes runs it, so no Node is needed for it.
+func biliBunCommand() []string { return []string{"bun", "add", "-g", biliPackage} }
+
 // InstallBili installs billion-context the way its README says.
 func InstallBili() (*BiliView, error) {
 	biliMu.Lock()
@@ -753,18 +762,32 @@ func InstallBili() (*BiliView, error) {
 	if biliPath() != "" {
 		return ReadBili(), nil
 	}
-	c := biliInstaller()
-	if c == nil {
-		return nil, fmt.Errorf("npm isn't installed — install Node.js first, or see %s", BiliURL)
+	if c := biliInstaller(); c != nil {
+		out, err := runPlain(c, 5*time.Minute)
+		if err != nil {
+			return nil, err
+		}
+		proc.Forget()
+		v := ReadBili()
+		if v.Path == "" {
+			return nil, fmt.Errorf("%s ran, but bili still isn't found: %s", biliShown(c), lastLines(out, 3))
+		}
+		return v, nil
 	}
-	out, err := runPlain(c, 5*time.Minute)
+	// no npm: the Bun magpie downloads for its plugins installs it, so a
+	// computer without Node still gets it from the page's button
+	bun, err := plugin.Bun(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("npm isn't installed and Bun couldn't be downloaded: %w", err)
+	}
+	out, err := runPlain(append([]string{bun}, biliBunCommand()[1:]...), 5*time.Minute)
 	if err != nil {
 		return nil, err
 	}
 	proc.Forget()
 	v := ReadBili()
 	if v.Path == "" {
-		return nil, fmt.Errorf("%s ran, but bili still isn't found: %s", biliShown(c), lastLines(out, 3))
+		return nil, fmt.Errorf("bun ran, but bili still isn't found: %s", lastLines(out, 3))
 	}
 	return v, nil
 }

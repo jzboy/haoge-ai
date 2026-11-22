@@ -1909,12 +1909,12 @@ magpie.plugin("library", (ctx) => {
       if (bili.install) card.append(el("p", "lib-rtk-cmd", bili.install));
       if (biliInstallErr && !biliInstalling) card.append(el("p", "lib-rtk-note lib-rtk-err lib-bili-install-err", t("The install failed: {why}", { why: biliInstallErr })));
       const acts = el("div", "lib-acts");
-      if (bili.install) {
-        const ib = button(biliInstalling ? t("Installing…") : t("Install billion-context"), "action", installBili);
-        ib.disabled = biliInstalling;
-        acts.append(ib);
-      }
-      acts.append(button(t("Get billion-context"), bili.install ? "" : "action", () => browse(bili.url)), button(t("Check again"), "", () => { bili = null; render(); }));
+      // always offered: with npm it is npm's install, without it the Bun
+      // magpie keeps for its plugins installs it (biliBunCommand)
+      const ib = button(biliInstalling ? t("Installing…") : t("Install billion-context"), "action", installBili);
+      ib.disabled = biliInstalling;
+      acts.append(ib);
+      acts.append(button(t("Get billion-context"), "", () => browse(bili.url)), button(t("Check again"), "", () => { bili = null; render(); }));
       card.append(acts);
     }
     body.append(card);
