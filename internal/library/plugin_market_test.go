@@ -2,15 +2,27 @@ package library
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
 	"testing"
 )
 
+
+// noOfficial keeps Claude Code's own marketplace out of a test's answer:
+// no test reaches GitHub, and the copy in the binary would stand in.
+func noOfficial(t *testing.T) {
+	t.Helper()
+	was := officialSeed
+	officialSeed = nil
+	t.Cleanup(func() { officialSeed = was; os.Remove(officialMarketCache()) })
+}
+
 // The Claude plugins tab's Discover row: the marketplaces Claude Code
 // knows, read here, with each plugin and what to install it from.
 func TestPluginMarketReadsKnownMarketplaces(t *testing.T) {
+	noOfficial(t)
 	dir := t.TempDir()
 	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 
@@ -52,6 +64,7 @@ func TestPluginMarketReadsKnownMarketplaces(t *testing.T) {
 // A marketplace Claude Code cloned from a folder (no repository) is
 // installed from that folder.
 func TestPluginMarketFolderSource(t *testing.T) {
+	noOfficial(t)
 	dir := t.TempDir()
 	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	mp := filepath.Join(dir, "plugins", "marketplaces", "local")
@@ -74,6 +87,7 @@ func TestPluginMarketFolderSource(t *testing.T) {
 
 // No marketplaces: an empty list, not an error.
 func TestPluginMarketNone(t *testing.T) {
+	noOfficial(t)
 	dir := t.TempDir()
 	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	m := PluginMarketList()
@@ -136,5 +150,44 @@ func TestPluginMarketIncludesOfficial(t *testing.T) {
 	}
 	if shared != 1 || official != 1 {
 		t.Fatalf("items %+v", m.Items)
+	}
+}
+
+// The CDN stands in when GitHub doesn't answer, and the copy in the binary
+// when neither does: the tab lists the official marketplace anyway.
+func TestPluginMarketOfficialFallbacks(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", dir)
+	was := marketFetch
+	t.Cleanup(func() { marketFetch = was; os.Remove(officialMarketCache()) })
+
+	var tried []string
+	marketFetch = func(u string) ([]byte, error) {
+		tried = append(tried, u)
+		if len(tried) == 1 {
+			return nil, errors.New("no route")
+		}
+		return []byte(`{"name":"claude-plugins-official","plugins":[{"name":"from-cdn"}]}`), nil
+	}
+	m := PluginMarketList()
+	if m.Official != "network" || len(tried) != 2 {
+		t.Fatalf("official %q, tried %v", m.Official, tried)
+	}
+	found := false
+	for _, it := range m.Items {
+		if it.Name == "from-cdn" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("items %+v", m.Items)
+	}
+
+	os.Remove(officialMarketCache())
+	tried = nil
+	marketFetch = func(u string) ([]byte, error) { tried = append(tried, u); return nil, errors.New("offline") }
+	m = PluginMarketList()
+	if m.Official != "seed" || len(m.Items) < 100 {
+		t.Fatalf("offline: official %q, %d items", m.Official, len(m.Items))
 	}
 }

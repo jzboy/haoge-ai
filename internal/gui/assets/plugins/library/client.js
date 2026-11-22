@@ -5360,28 +5360,31 @@ magpie.plugin("library", (ctx) => {
 
   function renderPlugins(body) {
     body.append(intro(t("A Claude Code plugin is skills, MCP servers, hooks and subagents in one package. Install it once: magpie gives each part to the agents you pick, and you turn the plugin on, off or remove it as a whole. Its parts also show under their own tabs.")));
-    body.append(pluginDiscover());
     body.append(pluginFind());
     const all = shownAgents();
     const plugins = lib.plugins || [];
     if (!plugins.length) {
       body.append(empty(t("No Claude plugins in the library yet"), t("Install one from a folder, a git address or a marketplace.json.")));
+      body.append(pluginDiscover());
       return;
     }
     const list = el("div", "list lib-list");
     list.append(...[...plugins].sort((a, b) => a.name.localeCompare(b.name)).map((p) => pluginRow(p, all)));
     body.append(list);
+    body.append(pluginDiscover());
   }
 
-  // The Discover row: the plugins the marketplaces Claude Code knows offer,
-  // read from this computer's own marketplace files (library/plugins/market).
-  // Its list is filtered as the reader types, and Install takes one through
-  // the same source the Find row below does.
-  let plMarket = null;      // { marketplaces, items } once asked
+  // 发现: the plugins Claude Code's marketplaces offer, and its own
+  // (claude-plugins-official) whether or not Claude Code added it, read by
+  // library/plugins/market. Cards in a grid, filtered as the reader types;
+  // Install takes one through the same plugins/install the Find row uses.
+  let plMarket = null;      // the answer: { items, marketplaces, official }
   let plMarketErr = "";
   let plMarketBusy = false;
   let plMarketQ = "";
-  let plMarketShown = 30;
+  let plMarketShown = 60;
+
+  const PLUGIN_PAGE = 60;
 
   function pluginDiscover() {
     if (!plMarket && !plMarketBusy) {
@@ -5390,55 +5393,111 @@ magpie.plugin("library", (ctx) => {
         .then((m) => { plMarket = m || { items: [] }; }, (e) => { plMarket = { items: [] }; plMarketErr = e.message; })
         .then(() => { plMarketBusy = false; render(); });
     }
-    const card = el("div", "list lib-card lib-install lib-pldiscover");
-    const head = el("div", "lib-probehead");
-    head.append(el("span", "note", t("Discover") + " · " + t("Claude plugins")));
-    card.append(head);
-    const line = el("div", "lib-find");
+    const box = el("section", "mk");
+    box.dataset.market = "plugins";
+    const head = el("div", "row-head");
+    head.append(el("span", "label", t("Discover")), el("span", "grow"));
+    const note = el("span", "note mk-note");
+    head.append(note);
+    box.append(head);
+    const find = el("div", "mk-find");
     const inp = el("input");
     inp.type = "search";
     inp.dataset.lib = "pldiscover";
-    inp.placeholder = t("Search") + " " + t("Claude plugins");
+    inp.placeholder = t("Search the official marketplace — GitHub, Figma, testing…");
     inp.spellcheck = false;
     inp.autocomplete = "off";
     inp.value = plMarketQ;
-    inp.oninput = () => { plMarketQ = inp.value; plMarketShown = 30; draw(); };
+    inp.oninput = () => { plMarketQ = inp.value; plMarketShown = PLUGIN_PAGE; draw(); };
     inp.onkeydown = (e) => e.stopPropagation();
-    line.append(glyph(GLYPH.search, "lib-mini"), inp);
-    card.append(line);
-    if (plMarketErr) card.append(el("div", "lib-err", plMarketErr));
-    const list = el("div", "lib-picks");
-    card.append(list);
-    function draw() {
-      list.replaceChildren();
-      if (!plMarket) { list.append(el("div", "hint", t("Looking…"))); return; }
+    find.append(glyph(GLYPH.search, "lib-mini"), inp, el("span", "mk-spin"));
+    box.append(find);
+    const grid = el("div", "mk-grid");
+    box.append(grid);
+    const filtered = () => {
       const q = plMarketQ.trim().toLowerCase();
-      const all = (plMarket.items || []).filter((x) => !q || x.name.toLowerCase().includes(q) || (x.description || "").toLowerCase().includes(q) || (x.marketplace || "").toLowerCase().includes(q));
-      if (!all.length) { list.append(el("div", "hint", t("No Claude plugin found there"))); return; }
-      for (const x of all.slice(0, plMarketShown)) list.append(discoverRow(x));
-      if (all.length > plMarketShown) list.append(button(t("Show more"), "", () => { plMarketShown += 30; draw(); }));
+      return (plMarket?.items || []).filter((x) => !q ||
+        [x.name, x.description, x.author, x.category, x.marketplace].some((v) => (v || "").toLowerCase().includes(q)));
+    };
+    const noteText = () => {
+      if (!plMarket) return "";
+      const n = filtered().length;
+      return (n === 1 ? t("1 result") : t("{n} results", { n: n.toLocaleString(intlLang()) })) + " · " + t("Claude Code official marketplace");
+    };
+    note.textContent = noteText();
+    function draw() {
+      grid.replaceChildren();
+      note.textContent = noteText();
+      if (!plMarket) {
+        for (let i = 0; i < 6; i++) grid.append(pluginSkeleton());
+        return;
+      }
+      if (plMarketErr) { grid.append(el("div", "mk-msg err", plMarketErr)); return; }
+      const all = filtered();
+      if (!all.length) { grid.append(el("div", "mk-msg", t("No Claude plugin found there"))); return; }
+      for (const x of all.slice(0, plMarketShown)) grid.append(pluginCard(x));
+      const left = all.length - plMarketShown;
+      if (left > 0) grid.append(button(t("Show more ({n} left)", { n: left.toLocaleString(intlLang()) }), "mk-more", () => { plMarketShown += PLUGIN_PAGE; draw(); }));
     }
     draw();
-    return card;
+    return box;
   }
 
-  function discoverRow(x) {
-    const r = el("div", "lib-pick lib-plpick lib-pldisc" + (x.have ? " dim" : ""));
-    const w = el("span", "who");
-    w.append(el("span", "name", x.name));
-    if (x.description) w.append(el("span", "sub", x.description));
-    w.append(el("span", "sub lib-plparts", x.marketplace));
-    r.append(w);
-    if (x.have) r.append(tag(t("in the library"), ""));
+  function pluginSkeleton() {
+    const c = el("div", "mk-card mk-skel");
+    const top = el("div", "mk-top");
+    const lines = el("div", "mk-who");
+    const a = el("span", "skeleton"); a.style.cssText = "width:55%;height:10px";
+    const b = el("span", "skeleton"); b.style.cssText = "width:35%;height:8px";
+    lines.append(a, b);
+    top.append(el("span", "mk-icon skeleton"), lines);
+    const d = el("span", "skeleton"); d.style.cssText = "width:90%;height:8px;margin-top:4px";
+    c.append(top, d);
+    return c;
+  }
+
+  function pluginCard(x) {
+    const c = el("div", "mk-card" + (x.have ? " have" : ""));
+    c.dataset.id = x.name;
+    const top = el("div", "mk-top");
+    const icon = el("span", "mk-icon mono");
+    icon.append(el("span", "mk-mono", (x.name[0] || "?").toUpperCase()));
+    const who = el("div", "mk-who");
+    const nm = el("div", "mk-name");
+    nm.append(el("span", "mk-title", x.name));
+    who.append(nm);
+    const meta = el("div", "mk-meta");
+    if (x.author) meta.append(el("span", "mk-pub", x.author));
+    if (x.category) meta.append(el("span", "mk-badge", x.category));
+    who.append(meta);
+    top.append(icon, who);
+    c.append(top);
+    const d = el("p", "mk-desc", x.description || "");
+    d.title = x.description || "";
+    c.append(d);
+    const foot = el("div", "mk-foot");
+    const link = x.repo || x.homepage;
+    if (link) {
+      const a = el("a", "mk-link", t("Source"));
+      a.href = link;
+      a.target = "_blank";
+      a.rel = "noreferrer";
+      foot.append(a);
+    }
+    foot.append(el("span", "grow"));
+    if (x.have) foot.append(el("span", "mk-badge", t("in the library")));
     else {
       const add = button(t("Install"), "action", async () => {
         add.disabled = true;
+        add.textContent = t("Installing…");
         const done = await change("plugins/install", { source: x.source, names: [x.name], agents: shownAgents().map((a) => a.id) }, t("1 plugin installed"));
-        if (done) { plMarket = null; render(); } else add.disabled = false;
+        if (done) { plMarket = null; render(); }
+        else { add.disabled = false; add.textContent = t("Install"); }
       });
-      r.append(add);
+      foot.append(add);
     }
-    return r;
+    c.append(foot);
+    return c;
   }
 
   function pluginFind() {

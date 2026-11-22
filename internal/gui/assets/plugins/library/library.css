@@ -970,3 +970,7 @@ input.lib-memq:focus, input.lib-memtags:focus, input.lib-memwhy:focus { border-c
 .lib-bili-phil .lib-acts { justify-content: flex-end; }
 /* the servers turned off, folded below the ones on, as Providers' */
 #view-library .lib-offhead .fold:disabled { cursor: default; opacity: 1; }
+
+/* the plugin market's card: its own page, beside Install */
+.mk-link { flex: none; font-size: 11.5px; color: var(--muted); text-decoration: none; }
+.mk-link:hover { color: var(--fg); text-decoration: underline; }

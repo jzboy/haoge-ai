@@ -2,6 +2,8 @@
 // kernel adds them to i18n.js's (magpie.strings).
 magpie.strings({
   zh: {
+    "Claude Code official marketplace": "Claude Code 官方市场",
+    "Search the official marketplace — GitHub, Figma, testing…": "在 Claude Code 官方市场搜索插件 — GitHub、Figma、测试…",
     "Pick the agents that may search and read what was said in your other sessions.": "选择可以搜索、阅读你其他会话内容的 Agent。",
     "Update by themselves": "自动更新",
     "Fetch skills from GitHub and git again when they change there. One you changed here stays as it is.": "GitHub 和 git 上的技能有改动时自动重新获取。你在这里改过的技能保持不变。",
@@ -2154,6 +2156,8 @@ magpie.strings({
     "{name} read again from its source": "已重新從來源讀取 {name}",
   },
   ja: {
+    "Claude Code official marketplace": "Claude Code 公式マーケット",
+    "Search the official marketplace — GitHub, Figma, testing…": "公式マーケットを検索 — GitHub、Figma、テスト…",
     "Pick the agents that may search and read what was said in your other sessions.": "ほかのセッションで話した内容を検索して読める Agent を選びます。",
     "Update by themselves": "自動で更新",
     "Fetch skills from GitHub and git again when they change there. One you changed here stays as it is.": "GitHub や git でスキルが変わったら自動で取得し直します。ここで変更したスキルはそのままです。",
@@ -3230,6 +3234,8 @@ magpie.strings({
     "{name} read again from its source": "{name} をソースから読み直しました",
   },
   de: {
+    "Claude Code official marketplace": "Offizieller Claude-Code-Marktplatz",
+    "Search the official marketplace — GitHub, Figma, testing…": "Im offiziellen Marktplatz suchen – GitHub, Figma, Tests…",
     "Pick the agents that may search and read what was said in your other sessions.": "Wähle die Agents, die durchsuchen und lesen dürfen, was in deinen anderen Sitzungen gesagt wurde.",
     "Update by themselves": "Selbst aktualisieren",
     "Fetch skills from GitHub and git again when they change there. One you changed here stays as it is.": "Skills von GitHub und git neu laden, wenn sie sich dort ändern. Ein hier geänderter Skill bleibt, wie er ist.",
