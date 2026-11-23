@@ -7,6 +7,10 @@
 - **两种产物**：Windows `haoge-ai-Windows-amd64.exe`（WebView2，无需额外依赖）、macOS `haoge-ai-macos-arm64.dmg`（Apple 芯片，未签名，首次打开请右键 → 打开）。
 <!-- /intro -->
 
+## haoge-v1.12
+
+- 界面里由应用自身返回的提示与说明也统一显示「浩哥AI」：操作失败原因、选项说明与悬浮提示、Agent 页的供应商名。命令行、`magpie/…` 模型 id 等标识符保持不变。
+
 ## haoge-v1.11
 
 - billion-context 的「安装」按钮现在始终显示；电脑没装 Node/npm 时会自动下载浩哥AI 自带的 Bun 并完成安装，装完即可使用。
