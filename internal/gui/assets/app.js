@@ -424,6 +424,9 @@ function statusTErr(e) { status(t(e.message), "err"); }
 function settingsErr(e) { statusTErr(e); renderSettings(); }
 function status(msg, kind = "", ms = kind === "err" ? 8000 : 3500) {
   const s = $("#status");
+  // a message magpie's own code wrote (an error, a notice from the server)
+  // names the app 浩哥AI here; t()'s strings are branded already
+  msg = brand(msg);
   s.textContent = msg;
   s.title = msg;
   s.className = "status " + kind;
@@ -527,7 +530,7 @@ function renderAgents() {
       const b = el("button", "field " + cls);
       const opt = optionFor(f, f.value);
       b.title = claudePicks(a, f) && !f.value ? t("{label}: {value}", { label: t(f.label), value: t(AUTO_MODE_UNSET) }) + "\n" + t(CLAUDE_PICKS)
-        : t("{label}: {value}", { label: t(f.label), value: f.value || t("agent default") }) + (opt?.note ? ` · ${opt.note}` : "");
+        : t("{label}: {value}", { label: t(f.label), value: f.value || t("agent default") }) + (opt?.note ? ` · ${t(opt.note)}` : "");
       if (f.value && opt?.direct) b.title += "\n" + directSaid(a, opt);
       const effort = f.key === "effort" || f.label === "effort" || f.label === "thinking" || TIER_EFFORTS.includes(f.label) || f.label === SUB_EFFORT;
       if (opt?.icon || opt?.icons?.length) b.append(optionIcon(opt));
@@ -537,7 +540,7 @@ function renderAgents() {
       else if (!wide(f) || !f.value) b.append(el("span", "k", t(f.label)));
       if ((f.label === "executor" || f.label === "planner") && !b.querySelector(".k")) b.append(el("span", "k", t(f.label)));
       const shown = f.menu ? f.summary : effort ? effortName(opt || { value: f.value }) : (opt?.label || f.value || t(claudePicks(a, f) ? AUTO_MODE_UNSET : f.label === ADVISOR ? "Off" : FOLLOWS_MODEL.includes(f.label) ? "same as model" : "default"));
-      if (f.menu) b.title = f.options.map((o) => `${o.label}: ${o.note}`).join("\n");
+      if (f.menu) b.title = f.options.map((o) => `${t(o.label)}: ${t(o.note)}`).join("\n");
       b.append(el("span", "v" + (f.value || f.custom ? "" : " empty"), shown));
       if (f.value && opt?.fast) b.append(fastTag(opt.ultra));
       if (f.value && opt?.ref) { b.dataset.ref = opt.ref; const g = loadTag(loadOf(opt.ref)); if (g) b.append(g); }
@@ -1716,7 +1719,9 @@ function agentsLead(list) {
   lead.classList.toggle("welcome", first);
   if (!first) {
     const [pre, post] = t("Switch an agent on and the models you set up in magpie show up as the {magpie} provider in its own model list; or pick its model right here.").split("{magpie}");
-    lead.append(pre, el("b", "", "magpie"), post || "");
+    // the provider the agent lists, named as the app is here: its own model
+    // list shows the id (magpie/…), which stays
+    lead.append(pre, el("b", "", t("magpie")), post || "");
     return;
   }
   lead.append(el("b", "ag-lead-h", t("Let your agents use the models you set up in magpie")));
@@ -8538,7 +8543,7 @@ function iconPicker(ed) {
         if (!(asking = !!u)) typed = "";
         ok = !data.failed;
       } catch (e) {
-        note = e.message;
+        note = brand(e.message);
         kind = "err";
       }
       draw();
@@ -10337,7 +10342,7 @@ function drawEditor(p, presetID) {
           res.textContent = r.error ? balanceError(r.error) || r.error : r.ok ? t("Balance") + " " + r.amount : t(r.looked ? "No balance at /v1/usage or /api/usage/token" : "No Balance URL to ask");
           if (r.looked) window.balFoundShow?.(r);
           res.title = r.error || "";
-        } catch (e) { res.className = "bal-res bad"; res.textContent = e.message; }
+        } catch (e) { res.className = "bal-res bad"; res.textContent = brand(e.message); }
         check.classList.remove("busy");
       };
       balPair.append(res);
@@ -19285,7 +19290,7 @@ function openSessCombo(anchor, all, opts, value, choose, head) {
     const tick = el("span", "pm-tick");
     if (o.v === value) tick.append(svg(CHECK, 12, 1.9));
     const words = el("span", "pm-words");
-    words.append(el("span", "pm-name", o.name), el("span", "pm-note", o.note));
+    words.append(el("span", "pm-name", o.name), el("span", "pm-note", t(o.note)));
     b.title = o.v;
     // a menu of agents shows each one's icon; "All" keeps the room blank
     b.append(tick, ...(iconed ? [o.icon ? icon(o.icon) : el("span", "ic")] : []), words);
